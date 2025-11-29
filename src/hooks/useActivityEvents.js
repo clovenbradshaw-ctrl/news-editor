@@ -1,16 +1,17 @@
 /**
  * React Hooks for ActivityStreams Event Sourcing
  *
+ * SIMPLIFIED ARCHITECTURE - Direct WordPress API access, no middleware!
+ *
  * These hooks provide integration with the WordPress ActivityStreams
  * event store, enabling version history, event replay, and real-time sync.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import * as wordpress from '../api/wordpress';
 
-// Configuration - can be overridden via environment or props
+// Configuration
 const DEFAULT_CONFIG = {
-  apiBaseUrl: '/api/events',
-  wpApiBaseUrl: '/wp-json/contributor/v1',
   pollInterval: 30000, // 30 seconds
   enableRealtime: true,
 };
@@ -21,6 +22,11 @@ const DEFAULT_CONFIG = {
  * @param {number|string} articleId - The WordPress post ID
  * @param {object} options - Configuration options
  * @returns {object} Events data and helper functions
+ *
+ * Usage:
+ * ```jsx
+ * const { events, loading, latestEvent, contributors } = useArticleEvents(123);
+ * ```
  */
 export function useArticleEvents(articleId, options = {}) {
   const config = { ...DEFAULT_CONFIG, ...options };
@@ -28,32 +34,18 @@ export function useArticleEvents(articleId, options = {}) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [currentVersion, setCurrentVersion] = useState(null);
+  const [articleTitle, setArticleTitle] = useState('');
   const pollRef = useRef(null);
 
-  // Fetch events for article
+  // Fetch events for article (PUBLIC endpoint - no auth needed!)
   const fetchEvents = useCallback(async () => {
     if (!articleId) return;
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `${config.apiBaseUrl}/post/${articleId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch events: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      setEvents(data.events || []);
-      setCurrentVersion(data.events?.length || 0);
+      const data = await wordpress.getArticleHistory(articleId);
+      setEvents(data.history || []);
+      setArticleTitle(data.article_title || '');
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -61,57 +53,43 @@ export function useArticleEvents(articleId, options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [articleId, config.apiBaseUrl]);
+  }, [articleId]);
 
   // Replay events to rebuild state at a specific version
   const replayToVersion = useCallback(async (version) => {
-    if (!articleId) return null;
+    if (!articleId || !events.length) return null;
 
-    try {
-      const response = await fetch(
-        `${config.apiBaseUrl}/replay/${articleId}?until_version=${version}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        }
-      );
+    // Client-side replay - apply events up to the specified version
+    const eventsToApply = events.slice(0, version);
+    let state = null;
 
-      if (!response.ok) {
-        throw new Error('Failed to replay events');
+    eventsToApply.forEach(event => {
+      switch (event.type) {
+        case 'Create':
+          state = { ...event };
+          break;
+        case 'Update':
+          if (state) {
+            state = { ...state, ...event };
+          }
+          break;
+        case 'Delete':
+          state = null;
+          break;
+        default:
+          if (state) {
+            state = { ...state, ...event };
+          }
       }
+    });
 
-      const data = await response.json();
-      return data.current_state;
-    } catch (err) {
-      console.error('Error replaying events:', err);
-      throw err;
-    }
-  }, [articleId, config.apiBaseUrl]);
+    return state;
+  }, [articleId, events]);
 
-  // Get state at specific sequence number
-  const getStateAtSequence = useCallback(async (sequence) => {
-    if (!articleId) return null;
-
-    try {
-      const response = await fetch(
-        `${config.apiBaseUrl}/replay/${articleId}?until_sequence=${sequence}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to get state at sequence');
-      }
-
-      const data = await response.json();
-      return data.current_state;
-    } catch (err) {
-      console.error('Error getting state at sequence:', err);
-      throw err;
-    }
-  }, [articleId, config.apiBaseUrl]);
+  // Get state at specific index
+  const getStateAtIndex = useCallback((index) => {
+    return replayToVersion(index + 1);
+  }, [replayToVersion]);
 
   // Initial fetch
   useEffect(() => {
@@ -132,6 +110,8 @@ export function useArticleEvents(articleId, options = {}) {
   }, [fetchEvents, config.enableRealtime, config.pollInterval, articleId]);
 
   // Computed values
+  const currentVersion = events.length;
+
   const latestEvent = useMemo(() =>
     events.length > 0 ? events[events.length - 1] : null,
     [events]
@@ -161,234 +141,258 @@ export function useArticleEvents(articleId, options = {}) {
     events,
     loading,
     error,
+    articleTitle,
     currentVersion,
     latestEvent,
     eventsByType,
     contributors,
     refetch: fetchEvents,
     replayToVersion,
-    getStateAtSequence,
+    getStateAtIndex,
   };
 }
 
 /**
- * Hook for real-time event streaming
+ * Hook to fetch articles (PUBLIC - no auth needed)
  *
- * @param {object} options - Configuration options
- * @returns {object} Stream state and controls
+ * @param {object} options - Query options (page, per_page, category, tag, search)
+ * @returns {object} Articles data and pagination
+ *
+ * Usage:
+ * ```jsx
+ * const { articles, loading, pages, loadMore } = useArticles({ per_page: 10 });
+ * ```
  */
-export function useEventStream(options = {}) {
-  const config = { ...DEFAULT_CONFIG, ...options };
-
-  const [events, setEvents] = useState([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [lastSequence, setLastSequence] = useState(0);
+export function useArticles(options = {}) {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const abortRef = useRef(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+    per_page: options.per_page || 10,
+  });
 
-  // Start streaming events
-  const startStreaming = useCallback(async () => {
-    if (isStreaming) return;
+  const fetchArticles = useCallback(async (page = 1) => {
+    try {
+      setLoading(true);
+      const params = { ...options, page };
+      const data = await wordpress.getArticles(params);
 
-    setIsStreaming(true);
-    setError(null);
-
-    const poll = async () => {
-      if (!isStreaming) return;
-
-      try {
-        const response = await fetch(
-          `${config.apiBaseUrl}/stream?since_sequence=${lastSequence}`,
-          {
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            signal: abortRef.current?.signal,
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Stream fetch failed');
-        }
-
-        const data = await response.json();
-
-        if (data.events?.length > 0) {
-          setEvents(prev => [...prev, ...data.events]);
-          setLastSequence(data.latest_sequence);
-        }
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          setError(err.message);
-          console.error('Event stream error:', err);
-        }
+      if (page === 1) {
+        setArticles(data.articles);
+      } else {
+        setArticles(prev => [...prev, ...data.articles]);
       }
-    };
 
-    // Initial poll
-    await poll();
-
-    // Continue polling
-    const interval = setInterval(poll, config.pollInterval);
-    abortRef.current = { interval };
-
-    return () => {
-      clearInterval(interval);
-      setIsStreaming(false);
-    };
-  }, [isStreaming, lastSequence, config.apiBaseUrl, config.pollInterval]);
-
-  // Stop streaming
-  const stopStreaming = useCallback(() => {
-    if (abortRef.current?.interval) {
-      clearInterval(abortRef.current.interval);
+      setPagination({
+        page: data.page,
+        pages: data.pages,
+        total: data.total,
+        per_page: data.per_page,
+      });
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching articles:', err);
+    } finally {
+      setLoading(false);
     }
-    setIsStreaming(false);
-  }, []);
+  }, [options]);
 
-  // Cleanup on unmount
+  // Initial fetch
   useEffect(() => {
-    return () => {
-      stopStreaming();
-    };
-  }, [stopStreaming]);
+    fetchArticles(1);
+  }, [fetchArticles]);
 
-  // Clear events buffer
-  const clearEvents = useCallback(() => {
-    setEvents([]);
-  }, []);
+  const loadMore = useCallback(() => {
+    if (pagination.page < pagination.pages && !loading) {
+      fetchArticles(pagination.page + 1);
+    }
+  }, [pagination, loading, fetchArticles]);
+
+  const hasMore = pagination.page < pagination.pages;
 
   return {
-    events,
-    isStreaming,
-    lastSequence,
+    articles,
+    loading,
     error,
-    startStreaming,
-    stopStreaming,
-    clearEvents,
+    pagination,
+    hasMore,
+    loadMore,
+    refetch: () => fetchArticles(1),
   };
 }
 
 /**
- * Hook to manage article state with event sourcing
+ * Hook to fetch a single article (PUBLIC - no auth needed)
  *
  * @param {number|string} articleId - The WordPress post ID
- * @param {object} options - Configuration options
- * @returns {object} Article state management
+ * @returns {object} Article data
+ *
+ * Usage:
+ * ```jsx
+ * const { article, loading, error } = useArticle(123);
+ * ```
  */
-export function useEventSourcedArticle(articleId, options = {}) {
-  const config = { ...DEFAULT_CONFIG, ...options };
-
+export function useArticle(articleId) {
   const [article, setArticle] = useState(null);
-  const [isDirty, setIsDirty] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState([]);
-  const { events, loading, error, refetch } = useArticleEvents(articleId, options);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Build current state from events
-  useEffect(() => {
-    if (events.length === 0) return;
-
-    let state = null;
-
-    events.forEach(event => {
-      switch (event.type) {
-        case 'Create':
-          state = { ...event.object };
-          break;
-        case 'Update':
-          if (state) {
-            state = { ...state, ...event.object };
-          }
-          break;
-        case 'Delete':
-          state = null;
-          break;
-        default:
-          // Handle custom event types
-          if (state && event.object) {
-            state = { ...state, ...event.object };
-          }
-      }
-    });
-
-    setArticle(state);
-  }, [events]);
-
-  // Apply a local change (optimistic update)
-  const applyChange = useCallback((changes) => {
-    setArticle(prev => prev ? { ...prev, ...changes } : changes);
-    setPendingChanges(prev => [...prev, {
-      type: 'Update',
-      changes,
-      timestamp: new Date().toISOString(),
-    }]);
-    setIsDirty(true);
-  }, []);
-
-  // Save changes to WordPress
-  const saveChanges = useCallback(async () => {
-    if (!articleId || pendingChanges.length === 0) return;
+  const fetchArticle = useCallback(async () => {
+    if (!articleId) return;
 
     try {
-      // Merge all pending changes
-      const mergedChanges = pendingChanges.reduce((acc, change) => ({
-        ...acc,
-        ...change.changes,
-      }), {});
-
-      // POST to WordPress
-      const response = await fetch(
-        `${config.wpApiBaseUrl.replace('/contributor/v1', '')}/wp/v2/posts/${articleId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            title: mergedChanges.name,
-            content: mergedChanges.content,
-            excerpt: mergedChanges.summary,
-            status: mergedChanges.status,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to save changes');
-      }
-
-      // Clear pending changes
-      setPendingChanges([]);
-      setIsDirty(false);
-
-      // Refetch events to get the new event from WordPress
-      await refetch();
-
-      return true;
+      setLoading(true);
+      const data = await wordpress.getArticle(articleId);
+      setArticle(data);
+      setError(null);
     } catch (err) {
-      console.error('Error saving changes:', err);
-      throw err;
+      setError(err.message);
+      console.error('Error fetching article:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [articleId, pendingChanges, config.wpApiBaseUrl, refetch]);
+  }, [articleId]);
 
-  // Discard local changes
-  const discardChanges = useCallback(() => {
-    setPendingChanges([]);
-    setIsDirty(false);
-    refetch();
-  }, [refetch]);
+  useEffect(() => {
+    fetchArticle();
+  }, [fetchArticle]);
 
   return {
     article,
-    events,
     loading,
     error,
-    isDirty,
-    pendingChanges,
-    applyChange,
-    saveChanges,
-    discardChanges,
-    refetch,
+    refetch: fetchArticle,
+  };
+}
+
+/**
+ * Hook to fetch homepage layout (PUBLIC - no auth needed)
+ *
+ * @returns {object} Homepage layout data
+ *
+ * Usage:
+ * ```jsx
+ * const { layout, heroArticle, sections, loading } = useHomepage();
+ * ```
+ */
+export function useHomepage() {
+  const [layout, setLayout] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchHomepage = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await wordpress.getHomepage();
+      setLayout(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching homepage:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHomepage();
+  }, [fetchHomepage]);
+
+  return {
+    layout,
+    heroArticle: layout?.hero_article || null,
+    sections: layout?.sections || [],
+    loading,
+    error,
+    refetch: fetchHomepage,
+  };
+}
+
+/**
+ * Hook to manage homepage layout (REQUIRES AUTH)
+ *
+ * @returns {object} Layout state and update function
+ *
+ * Usage:
+ * ```jsx
+ * const { layout, updateLayout, saving } = useHomepageEditor();
+ * updateLayout({ hero: 123, sections: [...] });
+ * ```
+ */
+export function useHomepageEditor() {
+  const [layout, setLayout] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchLayout = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await wordpress.getHomepage();
+      setLayout(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLayout();
+  }, [fetchLayout]);
+
+  const updateLayout = useCallback(async (newLayout) => {
+    try {
+      setSaving(true);
+      setError(null);
+      await wordpress.updateHomepage(newLayout);
+      setLayout(newLayout);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const setHero = useCallback((articleId) => {
+    if (!layout) return;
+    const newLayout = { ...layout, hero: articleId };
+    return updateLayout(newLayout);
+  }, [layout, updateLayout]);
+
+  const addSection = useCallback((section) => {
+    if (!layout) return;
+    const newLayout = {
+      ...layout,
+      sections: [...(layout.sections || []), section],
+    };
+    return updateLayout(newLayout);
+  }, [layout, updateLayout]);
+
+  const removeSection = useCallback((index) => {
+    if (!layout) return;
+    const sections = [...(layout.sections || [])];
+    sections.splice(index, 1);
+    return updateLayout({ ...layout, sections });
+  }, [layout, updateLayout]);
+
+  return {
+    layout,
+    loading,
+    saving,
+    error,
+    updateLayout,
+    setHero,
+    addSection,
+    removeSection,
+    refetch: fetchLayout,
   };
 }
 
@@ -461,7 +465,6 @@ export function useVersionComparison(articleId) {
       type: event.type,
       actor: event.actor?.name || 'System',
       published: event.published,
-      sequence: event.sequence,
     }));
   }, [events]);
 
@@ -479,14 +482,12 @@ export function useVersionComparison(articleId) {
 }
 
 /**
- * Hook for audit trail / activity log
+ * Hook for audit trail / activity log (REQUIRES AUTH)
  *
  * @param {object} options - Filter options
  * @returns {object} Audit trail data
  */
 export function useAuditTrail(options = {}) {
-  const config = { ...DEFAULT_CONFIG, ...options };
-
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -497,41 +498,20 @@ export function useAuditTrail(options = {}) {
     hasMore: false,
   });
 
-  // Fetch audit trail
+  // Fetch audit trail (requires auth)
   const fetchActivities = useCallback(async (offset = 0) => {
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({
-        limit: pagination.limit.toString(),
-        offset: offset.toString(),
-      });
+      const params = {
+        limit: pagination.limit,
+        offset: offset,
+      };
 
-      if (options.eventType) {
-        params.set('event_type', options.eventType);
-      }
+      if (options.event_type) params.event_type = options.event_type;
+      if (options.object_type) params.object_type = options.object_type;
 
-      if (options.objectType) {
-        params.set('object_type', options.objectType);
-      }
-
-      if (options.sinceSequence) {
-        params.set('since_sequence', options.sinceSequence.toString());
-      }
-
-      const response = await fetch(
-        `${config.apiBaseUrl}?${params}`,
-        {
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch audit trail');
-      }
-
-      const data = await response.json();
+      const data = await wordpress.getEvents(params);
 
       if (offset === 0) {
         setActivities(data.events || []);
@@ -553,7 +533,7 @@ export function useAuditTrail(options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [config.apiBaseUrl, pagination.limit, options]);
+  }, [pagination.limit, options]);
 
   // Load more activities
   const loadMore = useCallback(() => {
@@ -591,10 +571,149 @@ export function useAuditTrail(options = {}) {
   };
 }
 
+/**
+ * Hook to manage article with optimistic updates (REQUIRES AUTH)
+ *
+ * @param {number|string} articleId - The WordPress post ID
+ * @returns {object} Article state management
+ */
+export function useArticleEditor(articleId) {
+  const { article: fetchedArticle, loading: fetchLoading, error: fetchError, refetch } = useArticle(articleId);
+  const { events } = useArticleEvents(articleId, { enableRealtime: false });
+
+  const [article, setArticle] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Sync with fetched article
+  useEffect(() => {
+    if (fetchedArticle && !isDirty) {
+      setArticle(fetchedArticle);
+    }
+  }, [fetchedArticle, isDirty]);
+
+  // Apply local change (optimistic)
+  const updateField = useCallback((field, value) => {
+    setArticle(prev => prev ? { ...prev, [field]: value } : { [field]: value });
+    setIsDirty(true);
+  }, []);
+
+  // Save changes to WordPress
+  const save = useCallback(async () => {
+    if (!articleId || !article) return false;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      await wordpress.updatePost(articleId, {
+        title: article.title,
+        content: article.content_raw || article.content,
+        excerpt: article.excerpt,
+        status: article.status,
+      });
+
+      setIsDirty(false);
+      await refetch();
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }, [articleId, article, refetch]);
+
+  // Discard changes
+  const discard = useCallback(() => {
+    setArticle(fetchedArticle);
+    setIsDirty(false);
+    setError(null);
+  }, [fetchedArticle]);
+
+  return {
+    article,
+    events,
+    loading: fetchLoading,
+    fetchError,
+    isDirty,
+    saving,
+    error,
+    updateField,
+    save,
+    discard,
+    refetch,
+  };
+}
+
+/**
+ * Hook for collections (PUBLIC for reading, AUTH for writing)
+ */
+export function useCollections() {
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchCollections = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await wordpress.getCollections();
+      setCollections(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCollections();
+  }, [fetchCollections]);
+
+  const createCollection = useCallback(async (data) => {
+    try {
+      const result = await wordpress.createCollection(data);
+      setCollections(prev => [...prev, result.collection]);
+      return result.collection;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
+
+  const updateCollection = useCallback(async (id, data) => {
+    try {
+      const result = await wordpress.updateCollection(id, data);
+      setCollections(prev =>
+        prev.map(c => c.id === id ? result.collection : c)
+      );
+      return result.collection;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, []);
+
+  return {
+    collections,
+    loading,
+    error,
+    createCollection,
+    updateCollection,
+    refetch: fetchCollections,
+  };
+}
+
 export default {
   useArticleEvents,
-  useEventStream,
-  useEventSourcedArticle,
+  useArticles,
+  useArticle,
+  useHomepage,
+  useHomepageEditor,
   useVersionComparison,
   useAuditTrail,
+  useArticleEditor,
+  useCollections,
 };
