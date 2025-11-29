@@ -28,6 +28,9 @@
     <!-- Lucide React Icons from CDN -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
+    <!-- Google Fonts for Page Builder -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
       #root:empty {
         display: flex;
@@ -72,6 +75,688 @@
 
       /* Modal styles */
       .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+
+      /* ============================================
+         PAGE BUILDER STYLES
+         ============================================ */
+
+      /* Viewport Modes */
+      .viewport-container {
+        transition: all 0.3s ease;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 0 0 1px #e2e8f0, 0 10px 40px rgba(0,0,0,0.1);
+      }
+
+      .viewport-desktop { max-width: 100%; }
+      .viewport-tablet { max-width: 768px; }
+      .viewport-mobile { max-width: 375px; }
+
+      /* Builder Toolbar */
+      .builder-toolbar {
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .viewport-switcher {
+        display: flex;
+        gap: 4px;
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 8px;
+      }
+
+      .viewport-btn {
+        padding: 8px 16px;
+        background: transparent;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .viewport-btn.active {
+        background: white;
+        color: #0f172a;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+
+      /* Left Panel - Blocks Palette */
+      .blocks-palette {
+        background: #f8fafc;
+        border-right: 1px solid #e2e8f0;
+        overflow-y: auto;
+      }
+
+      .block-item {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 8px;
+        cursor: grab;
+        transition: all 0.15s;
+      }
+
+      .block-item:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+        transform: translateY(-1px);
+      }
+
+      .block-item:active { cursor: grabbing; }
+
+      .block-item[data-advanced="true"] {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border-color: #fbbf24;
+      }
+
+      .block-item[data-advanced="true"]:hover {
+        border-color: #f59e0b;
+        box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
+      }
+
+      /* Canvas */
+      .builder-canvas {
+        background: #f1f5f9;
+        padding: 24px;
+        overflow-y: auto;
+      }
+
+      /* Masthead */
+      .masthead {
+        border-bottom: 3px solid #000;
+        padding: 32px;
+        text-align: center;
+      }
+
+      .masthead-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 3.5rem;
+        font-weight: 900;
+        margin: 0;
+        line-height: 1;
+      }
+
+      .masthead-tagline {
+        font-family: 'Lora', serif;
+        font-size: 1rem;
+        font-style: italic;
+        color: #64748b;
+        margin-top: 8px;
+      }
+
+      /* Row/Column Structure */
+      .page-row {
+        border: 2px dashed transparent;
+        position: relative;
+        transition: all 0.2s;
+        margin-bottom: 8px;
+      }
+
+      .page-row:hover {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+      }
+
+      .page-row.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #f7faff 0%, #eef2ff 100%);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        animation: pulseGlow 2s ease-in-out infinite;
+      }
+
+      @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2); }
+        50% { box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4); }
+      }
+
+      .page-row.selected .row-controls { opacity: 1; }
+
+      .row-controls {
+        position: absolute;
+        top: -28px;
+        right: 0;
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 10;
+      }
+
+      .row-controls::before {
+        content: 'Configure →';
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 600;
+        margin-right: 4px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .page-row:hover .row-controls::before { opacity: 1; }
+      .page-row:hover .row-controls { opacity: 1; }
+
+      .row-label {
+        position: absolute;
+        top: -28px;
+        left: 0;
+        font-size: 10px;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .page-row:hover .row-label { opacity: 1; }
+
+      .row-columns {
+        display: grid;
+        gap: var(--column-gap, 24px);
+        padding: var(--row-padding, 24px);
+      }
+
+      .column {
+        border: 2px dashed #cbd5e1;
+        min-height: 120px;
+        padding: 12px;
+        position: relative;
+        transition: all 0.2s;
+        background: #fafafa;
+      }
+
+      .column.drag-over {
+        border-color: #3b82f6;
+        background: #eff6ff;
+        border-style: solid;
+      }
+
+      .column.has-blocks {
+        background: white;
+        border-style: solid;
+        border-color: #e2e8f0;
+      }
+
+      .column.has-blocks.drag-over {
+        border-color: #3b82f6;
+        background: #eff6ff;
+      }
+
+      .column-label {
+        position: absolute;
+        top: 4px;
+        left: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .block-count {
+        background: #e0e7ff;
+        color: #4338ca;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 9px;
+      }
+
+      .column-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        min-height: 100px;
+        color: #94a3b8;
+        font-size: 13px;
+        text-align: center;
+      }
+
+      /* Block in Column */
+      .block-in-column {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 12px;
+        position: relative;
+        cursor: move;
+        transition: all 0.15s;
+      }
+
+      .block-in-column:hover {
+        border-color: #3b82f6;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+      }
+
+      .block-in-column.editing {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      }
+
+      .block-in-column.dragging { opacity: 0.5; }
+
+      .block-drag-handle {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        color: #94a3b8;
+        cursor: move;
+        opacity: 0;
+        transition: opacity 0.2s;
+        font-size: 16px;
+      }
+
+      .block-in-column:hover .block-drag-handle { opacity: 1; }
+
+      .block-remove {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #fee2e2;
+        color: #dc2626;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+        font-weight: 600;
+        z-index: 10;
+      }
+
+      .block-in-column:hover .block-remove { opacity: 1; }
+
+      .block-edit-badge {
+        position: absolute;
+        top: 8px;
+        left: 32px;
+        background: #10b981;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .block-drop-zone {
+        height: 8px;
+        margin: 4px 0;
+        border-radius: 4px;
+        background: transparent;
+        transition: all 0.2s;
+      }
+
+      .block-drop-zone.drag-over {
+        height: 40px;
+        background: #eff6ff;
+        border: 2px dashed #3b82f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3b82f6;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .add-block-hint {
+        text-align: center;
+        padding: 12px;
+        color: #94a3b8;
+        font-size: 12px;
+        border: 2px dashed #cbd5e1;
+        border-radius: 6px;
+        margin-top: 8px;
+        background: white;
+      }
+
+      /* Builder Buttons */
+      .builder-btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .builder-btn-primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .builder-btn-primary:hover { background: #2563eb; }
+
+      .builder-btn-secondary {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
+      }
+
+      .builder-btn-secondary:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+
+      .builder-btn-sm {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+
+      .builder-btn-icon {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Settings Panel */
+      .settings-panel {
+        background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+        border-left: 2px solid #e2e8f0;
+        padding: 0;
+        overflow-y: auto;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.05);
+      }
+
+      .settings-panel-header {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        color: white;
+        padding: 24px 20px;
+        border-bottom: 3px solid #667eea;
+        z-index: 20;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      .settings-panel-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .settings-panel-subtitle {
+        font-size: 13px;
+        opacity: 0.8;
+        margin-top: 6px;
+        font-weight: 400;
+      }
+
+      .settings-panel-content {
+        padding: 20px;
+        animation: fadeInUp 0.4s ease-out;
+      }
+
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .setting-group { margin-bottom: 20px; }
+
+      .setting-label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #1e293b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .setting-input,
+      .setting-textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s ease;
+      }
+
+      .setting-textarea {
+        min-height: 100px;
+        resize: vertical;
+        font-family: 'Lora', serif;
+        line-height: 1.6;
+      }
+
+      .setting-input:focus,
+      .setting-textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        transform: translateY(-1px);
+      }
+
+      .setting-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .setting-select:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      .setting-select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+      }
+
+      .setting-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 0;
+      }
+
+      .setting-checkbox input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+      }
+
+      /* Layout Presets */
+      .layout-preset {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+        margin-bottom: 8px;
+      }
+
+      .layout-preset:hover {
+        border-color: #3b82f6;
+        background: #f8fafc;
+      }
+
+      .layout-visual {
+        display: flex;
+        gap: 4px;
+        height: 40px;
+        margin-bottom: 8px;
+      }
+
+      .layout-visual-col {
+        background: #cbd5e1;
+        border-radius: 2px;
+        flex: 1;
+      }
+
+      /* Article Content Styles */
+      .article-image-block {
+        width: 100%;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        opacity: 0.8;
+        object-fit: cover;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .article-image-block img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+
+      .article-headline {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+        line-height: 1.1;
+        margin: 0 0 1rem 0;
+        color: #0f172a;
+      }
+
+      .article-deck {
+        font-family: 'Lora', serif;
+        font-size: 1.125rem;
+        line-height: 1.6;
+        color: #475569;
+        margin-bottom: 1rem;
+      }
+
+      .article-byline {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        font-weight: 500;
+      }
+
+      .article-body-text {
+        font-family: 'Lora', serif;
+        font-size: 1.0625rem;
+        line-height: 1.7;
+        color: #334155;
+      }
+
+      .newsletter-box {
+        background: #f8fafc;
+        border: 2px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .newsletter-box h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem 0;
+      }
+
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tag-badge {
+        background: #e0e7ff;
+        color: #3730a3;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      /* Article Selector Styles */
+      .article-selector {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 2px solid #0ea5e9;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 16px;
+      }
+
+      .article-selector-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #0369a1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .article-selector select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #bae6fd;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .article-selector select:focus {
+        outline: none;
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+      }
+
+      .linked-article-badge {
+        position: absolute;
+        top: 4px;
+        right: 50px;
+        background: #0ea5e9;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
     </style>
   </head>
   <body>
@@ -197,6 +882,1455 @@
           body: '<p>Sleep experts recommend...</p>'
         }
       ];
+
+      // ============================================
+      // PAGE BUILDER - Block Types with Default Content
+      // ============================================
+      const BLOCK_TYPES = {
+        HERO: {
+          id: 'hero',
+          name: 'Hero Article',
+          icon: '🎯',
+          defaultContent: {
+            headline: 'Metro Council Bypassed Federal Oversight',
+            deck: 'Investigation reveals unauthorized payments totaling over $3.2 million',
+            author: 'Michael Cass',
+            date: new Date().toLocaleDateString(),
+            body: 'Documents obtained through public records requests show Nashville\'s Office of Homeless Services authorized payments without following required federal procedures.',
+            showImage: true,
+            imageUrl: '',
+            linkedArticleId: null, // NEW: Link to specific article
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        },
+        ARTICLE: {
+          id: 'article',
+          name: 'Article Card',
+          icon: '📄',
+          defaultContent: {
+            headline: 'Families Face Eviction After Funding Cut',
+            excerpt: 'Multiple families report being promised Section 8 vouchers that never materialized.',
+            showImage: true,
+            imageUrl: '',
+            linkedArticleId: null, // NEW: Link to specific article
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        },
+        NEWSLETTER: {
+          id: 'newsletter',
+          name: 'Newsletter',
+          icon: '✉️',
+          defaultContent: {
+            heading: 'Get Accountability Delivered',
+            description: 'Independent journalism on Metro Nashville',
+            buttonText: 'Subscribe',
+            placeholder: 'your@email.com',
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        },
+        TAGS: {
+          id: 'tags',
+          name: 'Tag Filter',
+          icon: '🏷️',
+          defaultContent: {
+            tags: ['metro-council', 'housing', 'investigations'],
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        },
+        TEXT: {
+          id: 'text',
+          name: 'Text Block',
+          icon: '📝',
+          defaultContent: {
+            content: 'Add your text content here. This can be used for any editorial content, updates, or context you want to provide.',
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        },
+        HTML: {
+          id: 'html',
+          name: 'Custom HTML',
+          icon: '⚡',
+          defaultContent: {
+            html: '<div style="padding: 20px; background: #f0f9ff; border-radius: 8px; border: 2px solid #3b82f6;">\n  <h3 style="margin: 0 0 10px 0; color: #1e40af;">Custom HTML Block</h3>\n  <p style="margin: 0; color: #1e3a8a;">Add your own HTML, CSS, and styling here. Perfect for custom designs, embeds, or special layouts.</p>\n</div>',
+            paddingTop: '0',
+            paddingRight: '0',
+            paddingBottom: '0',
+            paddingLeft: '0'
+          }
+        }
+      };
+
+      // Layout Presets
+      const LAYOUT_PRESETS = [
+        { id: '1-col', name: 'Single Column', columns: ['1fr'], visual: [1] },
+        { id: '2-col', name: 'Two Equal', columns: ['1fr', '1fr'], visual: [1, 1] },
+        { id: '3-col', name: 'Three Equal', columns: ['1fr', '1fr', '1fr'], visual: [1, 1, 1] },
+        { id: '4-col', name: 'Four Equal', columns: ['1fr', '1fr', '1fr', '1fr'], visual: [1, 1, 1, 1] },
+        { id: '5-col', name: 'Five Equal', columns: ['1fr', '1fr', '1fr', '1fr', '1fr'], visual: [1, 1, 1, 1, 1] },
+        { id: '6-col', name: 'Six Equal', columns: ['1fr', '1fr', '1fr', '1fr', '1fr', '1fr'], visual: [1, 1, 1, 1, 1, 1] },
+        { id: '2-1-col', name: '2:1 Ratio', columns: ['2fr', '1fr'], visual: [2, 1] },
+        { id: '1-2-col', name: '1:2 Ratio', columns: ['1fr', '2fr'], visual: [1, 2] },
+        { id: '3-1-col', name: '3:1 Ratio', columns: ['3fr', '1fr'], visual: [3, 1] },
+        { id: '1-3-col', name: '1:3 Ratio', columns: ['1fr', '3fr'], visual: [1, 3] },
+        { id: '3-2-1-col', name: '3:2:1 Ratio', columns: ['3fr', '2fr', '1fr'], visual: [3, 2, 1] },
+        { id: '2-3-2-col', name: '2:3:2 Center', columns: ['2fr', '3fr', '2fr'], visual: [2, 3, 2] },
+      ];
+
+      // Block Preview Component
+      const BlockPreview = ({ block, articles }) => {
+        const { type, content } = block;
+
+        // Get linked article data if available
+        const linkedArticle = content.linkedArticleId
+          ? articles.find(a => a.id === content.linkedArticleId)
+          : null;
+
+        // Use linked article data or fall back to block content
+        const displayContent = linkedArticle ? {
+          headline: linkedArticle.title,
+          deck: linkedArticle.subtitle,
+          excerpt: linkedArticle.subtitle,
+          author: linkedArticle.byline,
+          date: linkedArticle.date,
+          body: linkedArticle.body?.replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+          imageUrl: linkedArticle.image,
+          showImage: content.showImage
+        } : content;
+
+        const paddingStyle = {
+          paddingTop: `${content.paddingTop || '0'}px`,
+          paddingRight: `${content.paddingRight || '0'}px`,
+          paddingBottom: `${content.paddingBottom || '0'}px`,
+          paddingLeft: `${content.paddingLeft || '0'}px`
+        };
+
+        const hasPadding = (content.paddingTop > 0) || (content.paddingRight > 0) ||
+                          (content.paddingBottom > 0) || (content.paddingLeft > 0);
+
+        if (hasPadding) {
+          paddingStyle.border = '1px dashed rgba(102, 126, 234, 0.3)';
+          paddingStyle.background = 'rgba(102, 126, 234, 0.02)';
+        }
+
+        switch(type) {
+          case 'hero':
+            return React.createElement('div', { style: paddingStyle },
+              linkedArticle && React.createElement('div', { className: 'linked-article-badge' }, '📎 Linked'),
+              displayContent.showImage && React.createElement('div', {
+                className: 'article-image-block',
+                style: { height: '250px' }
+              },
+                displayContent.imageUrl
+                  ? React.createElement('img', {
+                      src: displayContent.imageUrl,
+                      alt: displayContent.headline,
+                      onError: (e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<span style="color: #dc2626;">⚠️ Image failed to load</span>';
+                      }
+                    })
+                  : React.createElement('span', null, 'Add image URL in editor →')
+              ),
+              React.createElement('h2', { className: 'article-headline', style: { fontSize: '2rem' } }, displayContent.headline),
+              displayContent.deck && React.createElement('div', { className: 'article-deck' }, displayContent.deck),
+              React.createElement('div', { className: 'article-byline' },
+                'By ', displayContent.author, ' · ', displayContent.date
+              ),
+              React.createElement('div', { className: 'article-body-text' }, displayContent.body)
+            );
+
+          case 'article':
+            return React.createElement('div', { style: paddingStyle },
+              linkedArticle && React.createElement('div', { className: 'linked-article-badge' }, '📎 Linked'),
+              displayContent.showImage && React.createElement('div', {
+                className: 'article-image-block',
+                style: { height: '150px' }
+              },
+                displayContent.imageUrl
+                  ? React.createElement('img', {
+                      src: displayContent.imageUrl,
+                      alt: displayContent.headline,
+                      onError: (e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<span style="color: #dc2626;">⚠️ Image failed to load</span>';
+                      }
+                    })
+                  : React.createElement('span', null, 'Add image URL →')
+              ),
+              React.createElement('h3', { className: 'article-headline', style: { fontSize: '1.25rem' } }, displayContent.headline),
+              React.createElement('p', {
+                style: { fontSize: '0.9375rem', lineHeight: '1.6', color: '#475569' }
+              }, displayContent.excerpt)
+            );
+
+          case 'newsletter':
+            return React.createElement('div', { style: paddingStyle },
+              React.createElement('div', { className: 'newsletter-box' },
+                React.createElement('h3', null, content.heading),
+                React.createElement('p', {
+                  style: { margin: '0.5rem 0', fontSize: '14px', color: '#64748b' }
+                }, content.description),
+                React.createElement('input', {
+                  type: 'email',
+                  placeholder: content.placeholder,
+                  style: {
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    fontSize: '14px'
+                  },
+                  disabled: true
+                }),
+                React.createElement('button', {
+                  className: 'builder-btn builder-btn-primary',
+                  style: { width: '100%' }
+                }, content.buttonText)
+              )
+            );
+
+          case 'tags':
+            return React.createElement('div', { style: paddingStyle },
+              React.createElement('div', { className: 'tag-list' },
+                content.tags.map((tag, i) =>
+                  React.createElement('span', { key: i, className: 'tag-badge' }, tag)
+                )
+              )
+            );
+
+          case 'text':
+            return React.createElement('div', { style: paddingStyle },
+              React.createElement('div', { className: 'article-body-text', style: { fontSize: '1rem' } }, content.content)
+            );
+
+          case 'html':
+            return React.createElement('div', { style: paddingStyle },
+              React.createElement('div', { dangerouslySetInnerHTML: { __html: content.html || '' } })
+            );
+
+          default:
+            return React.createElement('div', null, 'Unknown block');
+        }
+      };
+
+      // Block Editor Component
+      const BlockEditor = ({ block, onUpdate, onClose, articles }) => {
+        const blockType = BLOCK_TYPES[block.type.toUpperCase()];
+        const [content, setContent] = useState(block.content);
+
+        const handleChange = (field, value) => {
+          const newContent = { ...content, [field]: value };
+          setContent(newContent);
+          onUpdate(newContent);
+        };
+
+        // Handle linking to an article
+        const handleLinkArticle = (articleId) => {
+          const id = articleId ? parseInt(articleId) : null;
+          handleChange('linkedArticleId', id);
+
+          // If linking an article, optionally populate content from it
+          if (id) {
+            const article = articles.find(a => a.id === id);
+            if (article) {
+              if (block.type === 'hero') {
+                handleChange('imageUrl', article.image || '');
+              } else if (block.type === 'article') {
+                handleChange('imageUrl', article.image || '');
+              }
+            }
+          }
+        };
+
+        return React.createElement('div', { style: { height: '100%', display: 'flex', flexDirection: 'column' } },
+          React.createElement('div', { className: 'settings-panel-header' },
+            React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' } },
+              React.createElement('div', null,
+                React.createElement('h3', { className: 'settings-panel-title' },
+                  React.createElement('span', { style: { fontSize: '28px' } }, blockType.icon),
+                  React.createElement('span', null, 'Edit Block')
+                ),
+                React.createElement('div', { className: 'settings-panel-subtitle' },
+                  blockType.name, ' • Click fields to edit content'
+                )
+              ),
+              React.createElement('button', {
+                onClick: onClose,
+                style: {
+                  background: 'rgba(255,255,255,0.15)',
+                  border: 'none',
+                  color: 'white',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: 'bold'
+                }
+              }, '✕')
+            )
+          ),
+
+          React.createElement('div', { className: 'settings-panel-content' },
+            React.createElement('div', { className: 'space-y-4' },
+
+              // Article Selector for Hero and Article blocks
+              (block.type === 'hero' || block.type === 'article') &&
+                React.createElement('div', { className: 'article-selector' },
+                  React.createElement('div', { className: 'article-selector-label' },
+                    React.createElement('span', null, '📎'),
+                    React.createElement('span', null, 'Link to Article')
+                  ),
+                  React.createElement('select', {
+                    value: content.linkedArticleId || '',
+                    onChange: (e) => handleLinkArticle(e.target.value)
+                  },
+                    React.createElement('option', { value: '' }, '— Manual Content —'),
+                    articles.map(article =>
+                      React.createElement('option', { key: article.id, value: article.id },
+                        article.title.substring(0, 50) + (article.title.length > 50 ? '...' : '')
+                      )
+                    )
+                  ),
+                  content.linkedArticleId && React.createElement('div', {
+                    style: {
+                      marginTop: '10px',
+                      padding: '10px',
+                      background: 'white',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      color: '#0369a1'
+                    }
+                  }, '✓ Content will be pulled from the linked article automatically')
+                ),
+
+              // Hero block fields
+              block.type === 'hero' && React.createElement(React.Fragment, null,
+                !content.linkedArticleId && React.createElement(React.Fragment, null,
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Headline'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'setting-input',
+                      value: content.headline,
+                      onChange: (e) => handleChange('headline', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Deck (Subtitle)'),
+                    React.createElement('textarea', {
+                      className: 'setting-textarea',
+                      style: { minHeight: '60px' },
+                      value: content.deck,
+                      onChange: (e) => handleChange('deck', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Author'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'setting-input',
+                      value: content.author,
+                      onChange: (e) => handleChange('author', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Body Text'),
+                    React.createElement('textarea', {
+                      className: 'setting-textarea',
+                      value: content.body,
+                      onChange: (e) => handleChange('body', e.target.value)
+                    })
+                  )
+                ),
+                React.createElement('div', { className: 'setting-checkbox' },
+                  React.createElement('input', {
+                    type: 'checkbox',
+                    checked: content.showImage,
+                    onChange: (e) => handleChange('showImage', e.target.checked)
+                  }),
+                  React.createElement('label', null, 'Show Image')
+                ),
+                content.showImage && !content.linkedArticleId && React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Image URL'),
+                  React.createElement('input', {
+                    type: 'url',
+                    className: 'setting-input',
+                    value: content.imageUrl || '',
+                    onChange: (e) => handleChange('imageUrl', e.target.value),
+                    placeholder: 'https://example.com/image.jpg'
+                  }),
+                  React.createElement('div', {
+                    style: { fontSize: '11px', color: '#64748b', marginTop: '4px' }
+                  }, 'Paste a direct link to an image (JPG, PNG, WebP)')
+                )
+              ),
+
+              // Article block fields
+              block.type === 'article' && React.createElement(React.Fragment, null,
+                !content.linkedArticleId && React.createElement(React.Fragment, null,
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Headline'),
+                    React.createElement('input', {
+                      type: 'text',
+                      className: 'setting-input',
+                      value: content.headline,
+                      onChange: (e) => handleChange('headline', e.target.value)
+                    })
+                  ),
+                  React.createElement('div', { className: 'setting-group' },
+                    React.createElement('label', { className: 'setting-label' }, 'Excerpt'),
+                    React.createElement('textarea', {
+                      className: 'setting-textarea',
+                      style: { minHeight: '80px' },
+                      value: content.excerpt,
+                      onChange: (e) => handleChange('excerpt', e.target.value)
+                    })
+                  )
+                ),
+                React.createElement('div', { className: 'setting-checkbox' },
+                  React.createElement('input', {
+                    type: 'checkbox',
+                    checked: content.showImage,
+                    onChange: (e) => handleChange('showImage', e.target.checked)
+                  }),
+                  React.createElement('label', null, 'Show Image')
+                ),
+                content.showImage && !content.linkedArticleId && React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Image URL'),
+                  React.createElement('input', {
+                    type: 'url',
+                    className: 'setting-input',
+                    value: content.imageUrl || '',
+                    onChange: (e) => handleChange('imageUrl', e.target.value),
+                    placeholder: 'https://example.com/image.jpg'
+                  })
+                )
+              ),
+
+              // Newsletter block fields
+              block.type === 'newsletter' && React.createElement(React.Fragment, null,
+                React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Heading'),
+                  React.createElement('input', {
+                    type: 'text',
+                    className: 'setting-input',
+                    value: content.heading,
+                    onChange: (e) => handleChange('heading', e.target.value)
+                  })
+                ),
+                React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Description'),
+                  React.createElement('textarea', {
+                    className: 'setting-textarea',
+                    style: { minHeight: '60px' },
+                    value: content.description,
+                    onChange: (e) => handleChange('description', e.target.value)
+                  })
+                ),
+                React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Button Text'),
+                  React.createElement('input', {
+                    type: 'text',
+                    className: 'setting-input',
+                    value: content.buttonText,
+                    onChange: (e) => handleChange('buttonText', e.target.value)
+                  })
+                )
+              ),
+
+              // Tags block fields
+              block.type === 'tags' && React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label' }, 'Tags (comma-separated)'),
+                React.createElement('input', {
+                  type: 'text',
+                  className: 'setting-input',
+                  value: content.tags.join(', '),
+                  onChange: (e) => handleChange('tags', e.target.value.split(',').map(t => t.trim()))
+                })
+              ),
+
+              // Text block fields
+              block.type === 'text' && React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label' }, 'Content'),
+                React.createElement('textarea', {
+                  className: 'setting-textarea',
+                  value: content.content,
+                  onChange: (e) => handleChange('content', e.target.value)
+                })
+              ),
+
+              // HTML block fields
+              block.type === 'html' && React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label' }, 'HTML Code'),
+                React.createElement('textarea', {
+                  className: 'setting-textarea',
+                  value: content.html,
+                  onChange: (e) => handleChange('html', e.target.value),
+                  style: { minHeight: '300px', fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' },
+                  placeholder: '<div>Your custom HTML here...</div>'
+                }),
+                React.createElement('div', {
+                  style: {
+                    fontSize: '11px',
+                    color: '#718096',
+                    marginTop: '6px',
+                    padding: '8px 12px',
+                    background: '#fef3c7',
+                    borderRadius: '6px',
+                    border: '1px solid #fbbf24'
+                  }
+                }, '⚠️ Warning: Custom HTML can break layout. Test thoroughly.')
+              ),
+
+              // Universal Padding Controls
+              React.createElement('div', {
+                style: {
+                  marginTop: '24px',
+                  padding: '16px',
+                  background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                  borderRadius: '10px',
+                  border: '2px solid #d1d5db'
+                }
+              },
+                React.createElement('div', {
+                  style: {
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    color: '#1f2937',
+                    marginBottom: '14px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    paddingBottom: '10px',
+                    borderBottom: '2px solid #d1d5db'
+                  }
+                },
+                  React.createElement('span', { style: { fontSize: '16px' } }, '📏'),
+                  React.createElement('span', null, 'Padding (pixels)')
+                ),
+
+                // Quick Presets
+                React.createElement('div', { style: { marginBottom: '12px' } },
+                  React.createElement('div', {
+                    style: { fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }
+                  }, 'Quick Presets'),
+                  React.createElement('div', { style: { display: 'flex', gap: '6px', flexWrap: 'wrap' } },
+                    [
+                      { label: 'None', value: '0' },
+                      { label: 'Small', value: '8' },
+                      { label: 'Medium', value: '16' },
+                      { label: 'Large', value: '24' },
+                      { label: 'XL', value: '32' }
+                    ].map(preset =>
+                      React.createElement('button', {
+                        key: preset.label,
+                        onClick: () => {
+                          handleChange('paddingTop', preset.value);
+                          handleChange('paddingRight', preset.value);
+                          handleChange('paddingBottom', preset.value);
+                          handleChange('paddingLeft', preset.value);
+                        },
+                        style: {
+                          padding: '6px 12px',
+                          border: '2px solid #d1d5db',
+                          background: 'white',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          color: '#374151'
+                        }
+                      }, preset.label)
+                    )
+                  )
+                ),
+
+                React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' } },
+                  ['Top', 'Right', 'Bottom', 'Left'].map(dir =>
+                    React.createElement('div', { key: dir, className: 'setting-group', style: { marginBottom: '0' } },
+                      React.createElement('label', { className: 'setting-label', style: { color: '#374151' } }, dir),
+                      React.createElement('input', {
+                        type: 'number',
+                        className: 'setting-input',
+                        value: content['padding' + dir] || '0',
+                        onChange: (e) => handleChange('padding' + dir, e.target.value),
+                        min: '0',
+                        max: '200',
+                        style: { fontFamily: 'monospace', fontSize: '14px', fontWeight: '600' }
+                      })
+                    )
+                  )
+                ),
+
+                React.createElement('div', {
+                  style: {
+                    marginTop: '12px',
+                    fontSize: '11px',
+                    color: '#6b7280',
+                    fontStyle: 'italic',
+                    textAlign: 'center',
+                    padding: '8px',
+                    background: 'rgba(255,255,255,0.5)',
+                    borderRadius: '6px'
+                  }
+                }, '💡 Padding adds space inside the block borders')
+              )
+            )
+          )
+        );
+      };
+
+      // Page Settings Component
+      const PageSettings = ({ page, onChange, selectedRow, setSelectedRow }) => {
+        return React.createElement('div', { style: { height: '100%', display: 'flex', flexDirection: 'column' } },
+          React.createElement('div', { className: 'settings-panel-header' },
+            React.createElement('h2', { className: 'settings-panel-title' },
+              React.createElement('span', { style: { fontSize: '28px' } }, '⚙️'),
+              React.createElement('span', null, 'Page Settings')
+            ),
+            React.createElement('div', { className: 'settings-panel-subtitle' },
+              'Configure your publication\'s appearance and layout'
+            )
+          ),
+
+          React.createElement('div', { className: 'settings-panel-content' },
+
+            // Hint when no row selected
+            !selectedRow && React.createElement('div', {
+              style: {
+                background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                padding: '18px',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                border: '2px solid #fbbf24',
+                fontSize: '13px',
+                lineHeight: '1.6'
+              }
+            },
+              React.createElement('div', {
+                style: { fontWeight: 'bold', marginBottom: '10px', color: '#92400e', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }
+              },
+                React.createElement('span', { style: { fontSize: '20px' } }, '💡'),
+                ' Pro Tip'
+              ),
+              React.createElement('div', { style: { color: '#78350f' } },
+                'Click the ',
+                React.createElement('strong', {
+                  style: { display: 'inline-flex', alignItems: 'center', background: '#667eea', color: 'white', padding: '3px 10px', borderRadius: '6px', margin: '0 4px', fontSize: '14px', fontWeight: '700' }
+                }, '⚙️ gear icon'),
+                ' on any row to configure separate Desktop and Mobile layouts!'
+              )
+            ),
+
+            // Row-Specific Settings
+            selectedRow && React.createElement('div', {
+              style: {
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                marginBottom: '24px',
+                color: 'white',
+                position: 'relative'
+              }
+            },
+              React.createElement('button', {
+                onClick: () => setSelectedRow(null),
+                style: {
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 10px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 'bold'
+                }
+              }, '✕'),
+              React.createElement('div', {
+                style: {
+                  background: 'rgba(255,255,255,0.2)',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  fontSize: '13px',
+                  fontWeight: '600'
+                }
+              }, '🎯 Row ', page.rows.findIndex(r => r.id === selectedRow.id) + 1, ' Selected'),
+              React.createElement('h3', {
+                style: { fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }
+              },
+                React.createElement('span', null, '⚙️'),
+                ' Row Layout Settings'
+              ),
+
+              React.createElement('div', {
+                style: { background: 'rgba(255,255,255,0.15)', padding: '12px', borderRadius: '8px', marginBottom: '12px' }
+              },
+                React.createElement('label', {
+                  style: { fontSize: '13px', fontWeight: '600', display: 'block', marginBottom: '8px' }
+                }, '🖥️ Desktop Layout'),
+                React.createElement('select', {
+                  style: { width: '100%', padding: '10px', borderRadius: '6px', border: 'none', fontSize: '14px', fontWeight: '500' },
+                  value: selectedRow.layout,
+                  onChange: (e) => {
+                    const preset = LAYOUT_PRESETS.find(p => p.id === e.target.value);
+                    onChange({
+                      ...page,
+                      rows: page.rows.map(r => r.id === selectedRow.id
+                        ? { ...r, layout: preset.id, columns: preset.columns }
+                        : r
+                      )
+                    });
+                  }
+                },
+                  LAYOUT_PRESETS.map(preset =>
+                    React.createElement('option', { key: preset.id, value: preset.id }, preset.name)
+                  )
+                )
+              ),
+
+              React.createElement('div', {
+                style: { background: 'rgba(255,255,255,0.15)', padding: '12px', borderRadius: '8px' }
+              },
+                React.createElement('label', {
+                  style: { fontSize: '13px', fontWeight: '600', display: 'block', marginBottom: '8px' }
+                }, '📱 Mobile Layout'),
+                React.createElement('select', {
+                  style: { width: '100%', padding: '10px', borderRadius: '6px', border: 'none', fontSize: '14px', fontWeight: '500' },
+                  value: selectedRow.mobileLayout || '1-col',
+                  onChange: (e) => {
+                    const preset = LAYOUT_PRESETS.find(p => p.id === e.target.value);
+                    onChange({
+                      ...page,
+                      rows: page.rows.map(r => r.id === selectedRow.id
+                        ? { ...r, mobileLayout: preset.id, mobileColumns: preset.columns }
+                        : r
+                      )
+                    });
+                  }
+                },
+                  LAYOUT_PRESETS.map(preset =>
+                    React.createElement('option', { key: preset.id, value: preset.id }, preset.name)
+                  )
+                ),
+                React.createElement('div', {
+                  style: { fontSize: '11px', marginTop: '6px', opacity: '0.9' }
+                }, '💡 Different layout for mobile viewports')
+              )
+            ),
+
+            // Masthead Branding Section
+            React.createElement('div', {
+              style: {
+                background: 'linear-gradient(135deg, #fdfcfb 0%, #e2d1c3 100%)',
+                padding: '26px',
+                borderRadius: '16px',
+                marginBottom: '24px',
+                border: '2px solid #d6bcab'
+              }
+            },
+              React.createElement('h3', {
+                style: {
+                  fontSize: '22px',
+                  fontWeight: '800',
+                  marginBottom: '22px',
+                  color: '#2d3748',
+                  borderBottom: '3px solid #cbd5e0',
+                  paddingBottom: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }
+              },
+                React.createElement('span', { style: { fontSize: '32px' } }, '🎨'),
+                React.createElement('span', null, 'Masthead Branding')
+              ),
+
+              // Publication Name
+              React.createElement('div', {
+                style: { background: 'white', padding: '18px', borderRadius: '12px', marginBottom: '16px' }
+              },
+                React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Publication Name'),
+                  React.createElement('input', {
+                    type: 'text',
+                    className: 'setting-input',
+                    value: page.masthead.title,
+                    onChange: (e) => onChange({
+                      ...page,
+                      masthead: { ...page.masthead, title: e.target.value }
+                    }),
+                    style: { fontWeight: '600', fontSize: '15px', border: '2px solid #e2e8f0', padding: '10px 12px' }
+                  })
+                ),
+                React.createElement('div', { className: 'setting-group' },
+                  React.createElement('label', { className: 'setting-label' }, 'Tagline'),
+                  React.createElement('input', {
+                    type: 'text',
+                    className: 'setting-input',
+                    value: page.masthead.tagline,
+                    onChange: (e) => onChange({
+                      ...page,
+                      masthead: { ...page.masthead, tagline: e.target.value }
+                    }),
+                    style: { fontSize: '14px', border: '2px solid #e2e8f0', padding: '10px 12px' }
+                  })
+                )
+              )
+            ),
+
+            // Layout Settings
+            React.createElement('div', {
+              style: {
+                background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                padding: '24px',
+                borderRadius: '16px',
+                marginBottom: '24px',
+                border: '2px solid #93c5fd'
+              }
+            },
+              React.createElement('h3', {
+                style: {
+                  fontSize: '20px',
+                  fontWeight: '800',
+                  marginBottom: '20px',
+                  color: '#0c4a6e',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  paddingBottom: '14px',
+                  borderBottom: '2px solid #93c5fd'
+                }
+              },
+                React.createElement('span', { style: { fontSize: '26px' } }, '📐'),
+                React.createElement('span', null, 'Layout Settings')
+              ),
+
+              React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label', style: { color: '#0c4a6e', fontWeight: '600' } }, 'Max Width'),
+                React.createElement('select', {
+                  className: 'setting-select',
+                  value: page.settings.maxWidth,
+                  onChange: (e) => onChange({
+                    ...page,
+                    settings: { ...page.settings, maxWidth: e.target.value }
+                  }),
+                  style: { fontSize: '14px', border: '2px solid #bae6fd', padding: '10px 12px', background: 'white', fontWeight: '500' }
+                },
+                  React.createElement('option', { value: '960px' }, '960px'),
+                  React.createElement('option', { value: '1200px' }, '1200px'),
+                  React.createElement('option', { value: '1400px' }, '1400px'),
+                  React.createElement('option', { value: '100%' }, 'Full Width')
+                )
+              ),
+
+              React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label', style: { color: '#0c4a6e', fontWeight: '600' } }, 'Column Gap'),
+                React.createElement('select', {
+                  className: 'setting-select',
+                  value: page.settings.columnGap,
+                  onChange: (e) => onChange({
+                    ...page,
+                    settings: { ...page.settings, columnGap: e.target.value }
+                  }),
+                  style: { fontSize: '14px', border: '2px solid #bae6fd', padding: '10px 12px', background: 'white', fontWeight: '500' }
+                },
+                  React.createElement('option', { value: '8px' }, '8px'),
+                  React.createElement('option', { value: '16px' }, '16px'),
+                  React.createElement('option', { value: '24px' }, '24px'),
+                  React.createElement('option', { value: '32px' }, '32px')
+                )
+              ),
+
+              React.createElement('div', { className: 'setting-group' },
+                React.createElement('label', { className: 'setting-label', style: { color: '#0c4a6e', fontWeight: '600' } }, 'Row Padding'),
+                React.createElement('select', {
+                  className: 'setting-select',
+                  value: page.settings.rowPadding,
+                  onChange: (e) => onChange({
+                    ...page,
+                    settings: { ...page.settings, rowPadding: e.target.value }
+                  }),
+                  style: { fontSize: '14px', border: '2px solid #bae6fd', padding: '10px 12px', background: 'white', fontWeight: '500' }
+                },
+                  React.createElement('option', { value: '16px' }, '16px'),
+                  React.createElement('option', { value: '24px' }, '24px'),
+                  React.createElement('option', { value: '32px' }, '32px'),
+                  React.createElement('option', { value: '48px' }, '48px')
+                )
+              )
+            ),
+
+            // Help Section
+            React.createElement('div', {
+              style: {
+                marginTop: '24px',
+                padding: '20px',
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                borderRadius: '14px',
+                fontSize: '13px',
+                lineHeight: '1.7',
+                border: '2px solid #86efac'
+              }
+            },
+              React.createElement('div', {
+                style: {
+                  fontWeight: '800',
+                  marginBottom: '14px',
+                  color: '#166534',
+                  fontSize: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  paddingBottom: '10px',
+                  borderBottom: '2px solid rgba(22, 101, 52, 0.2)'
+                }
+              },
+                React.createElement('span', { style: { fontSize: '22px' } }, '💡'),
+                React.createElement('span', null, 'Quick Tips')
+              ),
+              React.createElement('ul', {
+                style: { margin: '0', paddingLeft: '20px', color: '#15803d', fontWeight: '500' }
+              },
+                React.createElement('li', { style: { marginBottom: '8px' } },
+                  'Click a row ', React.createElement('strong', null, '⚙️ gear icon'), ' to set mobile vs desktop layouts'
+                ),
+                React.createElement('li', { style: { marginBottom: '8px' } },
+                  'Use ', React.createElement('strong', null, '📎 Link to Article'), ' to connect blocks to your articles'
+                ),
+                React.createElement('li', { style: { marginBottom: '8px' } },
+                  'Click blocks to edit, drag ', React.createElement('strong', null, '⋮⋮'), ' to reorder'
+                ),
+                React.createElement('li', { style: { marginBottom: '8px' } },
+                  'Use ', React.createElement('strong', null, '⚡ Custom HTML'), ' block for advanced layouts'
+                ),
+                React.createElement('li', null,
+                  'Test responsive design with ', React.createElement('strong', null, 'viewport switcher')
+                )
+              )
+            )
+          )
+        );
+      };
+
+      // Main Page Builder Component
+      const PageBuilder = ({ articles, onBack }) => {
+        const [viewport, setViewport] = useState('desktop');
+        const [page, setPage] = useState({
+          masthead: {
+            title: 'Ground Truth Nashville',
+            tagline: 'Independent Investigative Journalism',
+            logoUrl: '',
+            showLogo: false,
+            backgroundColor: '#ffffff',
+            textColor: '#000000',
+            borderColor: '#000000',
+            borderWidth: '3px'
+          },
+          settings: {
+            maxWidth: '1200px',
+            columnGap: '24px',
+            rowPadding: '24px'
+          },
+          rows: []
+        });
+        const [selectedRow, setSelectedRow] = useState(null);
+        const [editingBlock, setEditingBlock] = useState(null);
+        const [draggedBlock, setDraggedBlock] = useState(null);
+        const [draggedFromColumn, setDraggedFromColumn] = useState(null);
+        const [dropTarget, setDropTarget] = useState(null);
+
+        useEffect(() => {
+          if (selectedRow) {
+            const updatedRow = page.rows.find(r => r.id === selectedRow.id);
+            if (updatedRow) {
+              setSelectedRow(updatedRow);
+            }
+          }
+        }, [page.rows]);
+
+        const addRow = (preset) => {
+          const newRow = {
+            id: Date.now().toString(),
+            layout: preset.id,
+            columns: preset.columns,
+            mobileLayout: '1-col',
+            mobileColumns: ['1fr'],
+            columnData: preset.columns.map(() => ({ blocks: [] }))
+          };
+          setPage({ ...page, rows: [...page.rows, newRow] });
+        };
+
+        const removeRow = (rowId) => {
+          setPage({ ...page, rows: page.rows.filter(r => r.id !== rowId) });
+          if (selectedRow?.id === rowId) setSelectedRow(null);
+        };
+
+        const addBlockToColumn = (rowId, columnIndex, blockType, position = null) => {
+          const newBlock = {
+            id: Date.now().toString() + Math.random(),
+            type: blockType.id,
+            content: { ...blockType.defaultContent }
+          };
+
+          setPage({
+            ...page,
+            rows: page.rows.map(row => {
+              if (row.id === rowId) {
+                const newColumnData = [...row.columnData];
+                if (position !== null && position >= 0) {
+                  newColumnData[columnIndex].blocks.splice(position, 0, newBlock);
+                } else {
+                  newColumnData[columnIndex].blocks.push(newBlock);
+                }
+                return { ...row, columnData: newColumnData };
+              }
+              return row;
+            })
+          });
+        };
+
+        const moveBlockWithinColumn = (rowId, columnIndex, fromIndex, toIndex) => {
+          setPage({
+            ...page,
+            rows: page.rows.map(row => {
+              if (row.id === rowId) {
+                const newColumnData = [...row.columnData];
+                const blocks = [...newColumnData[columnIndex].blocks];
+                const [movedBlock] = blocks.splice(fromIndex, 1);
+                blocks.splice(toIndex, 0, movedBlock);
+                newColumnData[columnIndex].blocks = blocks;
+                return { ...row, columnData: newColumnData };
+              }
+              return row;
+            })
+          });
+        };
+
+        const removeBlock = (rowId, columnIndex, blockId) => {
+          setPage({
+            ...page,
+            rows: page.rows.map(row => {
+              if (row.id === rowId) {
+                const newColumnData = [...row.columnData];
+                newColumnData[columnIndex].blocks =
+                  newColumnData[columnIndex].blocks.filter(b => b.id !== blockId);
+                return { ...row, columnData: newColumnData };
+              }
+              return row;
+            })
+          });
+          if (editingBlock?.id === blockId) setEditingBlock(null);
+        };
+
+        const updateBlockContent = (rowId, columnIndex, blockId, newContent) => {
+          setPage({
+            ...page,
+            rows: page.rows.map(row => {
+              if (row.id === rowId) {
+                const newColumnData = [...row.columnData];
+                newColumnData[columnIndex].blocks =
+                  newColumnData[columnIndex].blocks.map(block => {
+                    if (block.id === blockId) {
+                      return { ...block, content: newContent };
+                    }
+                    return block;
+                  });
+                return { ...row, columnData: newColumnData };
+              }
+              return row;
+            })
+          });
+        };
+
+        // Render masthead
+        const renderMasthead = () => {
+          const m = page.masthead;
+          const today = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+          return React.createElement('div', {
+            className: 'masthead',
+            style: {
+              backgroundColor: m.backgroundColor,
+              color: m.textColor,
+              borderBottom: m.borderWidth + ' solid ' + m.borderColor,
+              padding: '2rem 0',
+              marginBottom: '2rem'
+            }
+          },
+            React.createElement('h1', {
+              style: {
+                fontFamily: "'Playfair Display', serif",
+                fontSize: '3.5rem',
+                margin: 0,
+                fontWeight: 700,
+                color: m.textColor,
+                lineHeight: 1.1
+              }
+            }, m.title),
+            m.tagline && React.createElement('div', {
+              style: {
+                fontStyle: 'italic',
+                fontSize: '1.125rem',
+                marginTop: '0.5rem',
+                color: m.textColor,
+                opacity: 0.8
+              }
+            }, m.tagline),
+            React.createElement('div', {
+              style: {
+                marginTop: '1rem',
+                fontSize: '0.875rem',
+                color: m.textColor,
+                opacity: 0.7
+              }
+            }, today)
+          );
+        };
+
+        return React.createElement('div', { className: 'flex flex-col h-screen' },
+          // Toolbar
+          React.createElement('div', { className: 'builder-toolbar' },
+            React.createElement('div', { className: 'flex items-center gap-4' },
+              React.createElement('button', {
+                onClick: onBack,
+                className: 'flex items-center gap-2 text-gray-600 hover:text-gray-900'
+              },
+                React.createElement(Icon, { name: 'arrow-left', size: 20 }),
+                'Back'
+              ),
+              React.createElement('div', { className: 'font-bold' }, 'Page Layout Builder'),
+              React.createElement('div', { className: 'viewport-switcher' },
+                ['desktop', 'tablet', 'mobile'].map(vp =>
+                  React.createElement('button', {
+                    key: vp,
+                    className: 'viewport-btn ' + (viewport === vp ? 'active' : ''),
+                    onClick: () => setViewport(vp)
+                  },
+                    React.createElement('span', null, vp === 'desktop' ? '🖥️' : '📱'),
+                    React.createElement('span', null, vp.charAt(0).toUpperCase() + vp.slice(1))
+                  )
+                )
+              )
+            ),
+
+            React.createElement('div', { className: 'flex gap-2' },
+              React.createElement('button', {
+                className: 'builder-btn builder-btn-secondary',
+                onClick: () => {
+                  const json = prompt('Paste JSON:');
+                  if (json) {
+                    try {
+                      setPage(JSON.parse(json));
+                      setEditingBlock(null);
+                    } catch (e) {
+                      alert('Invalid JSON');
+                    }
+                  }
+                }
+              }, '📥 Import'),
+              React.createElement('button', {
+                className: 'builder-btn builder-btn-primary',
+                onClick: () => {
+                  navigator.clipboard.writeText(JSON.stringify(page, null, 2));
+                  alert('JSON copied to clipboard!');
+                }
+              }, '📋 Export JSON')
+            )
+          ),
+
+          // Main Content Area
+          React.createElement('div', { className: 'flex flex-1 overflow-hidden' },
+            // Left: Blocks
+            React.createElement('div', { className: 'blocks-palette w-64 p-4' },
+              React.createElement('h3', { className: 'font-bold text-xs mb-3 text-gray-600 uppercase' }, 'Content Blocks'),
+              Object.values(BLOCK_TYPES).map(type =>
+                React.createElement('div', {
+                  key: type.id,
+                  className: 'block-item',
+                  'data-advanced': type.id === 'html' ? 'true' : 'false',
+                  draggable: true,
+                  onDragStart: () => setDraggedBlock(type)
+                },
+                  React.createElement('div', { className: 'flex items-center gap-2 mb-1' },
+                    React.createElement('span', { className: 'text-lg' }, type.icon),
+                    React.createElement('span', { className: 'font-semibold text-sm' }, type.name),
+                    type.id === 'html' && React.createElement('span', {
+                      style: {
+                        fontSize: '9px',
+                        fontWeight: '700',
+                        background: '#f59e0b',
+                        color: 'white',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        marginLeft: 'auto',
+                        letterSpacing: '0.5px'
+                      }
+                    }, 'ADVANCED')
+                  )
+                )
+              ),
+
+              React.createElement('h3', { className: 'font-bold text-xs mb-3 mt-6 text-gray-600 uppercase' }, 'Add Row'),
+              LAYOUT_PRESETS.map(preset =>
+                React.createElement('div', {
+                  key: preset.id,
+                  className: 'layout-preset',
+                  onClick: () => addRow(preset)
+                },
+                  React.createElement('div', { className: 'layout-visual' },
+                    preset.visual.map((width, i) =>
+                      React.createElement('div', { key: i, className: 'layout-visual-col', style: { flex: width } })
+                    )
+                  ),
+                  React.createElement('div', { className: 'text-xs font-medium' }, preset.name)
+                )
+              )
+            ),
+
+            // Center: Canvas
+            React.createElement('div', { className: 'flex-1 builder-canvas' },
+              React.createElement('div', { className: 'viewport-container viewport-' + viewport },
+                renderMasthead(),
+
+                page.rows.length === 0
+                  ? React.createElement('div', { className: 'text-center py-20 text-gray-400' },
+                      React.createElement('div', { className: 'text-4xl mb-3' }, '👈'),
+                      React.createElement('div', { className: 'font-medium' }, 'Add a row to start building')
+                    )
+                  : page.rows.map((row, rowIndex) =>
+                      React.createElement('div', {
+                        key: row.id,
+                        className: 'page-row ' + (selectedRow?.id === row.id ? 'selected' : ''),
+                        onClick: () => setSelectedRow(row)
+                      },
+                        React.createElement('div', { className: 'row-label' }, 'Row ', rowIndex + 1),
+                        React.createElement('div', { className: 'row-controls' },
+                          React.createElement('button', {
+                            className: 'builder-btn builder-btn-secondary builder-btn-sm builder-btn-icon',
+                            onClick: (e) => {
+                              e.stopPropagation();
+                              setEditingBlock(null);
+                              setSelectedRow(row);
+                            },
+                            style: {
+                              background: selectedRow?.id === row.id ? '#667eea' : '#e2e8f0',
+                              color: selectedRow?.id === row.id ? 'white' : '#64748b',
+                              border: selectedRow?.id === row.id ? '2px solid #667eea' : 'none'
+                            },
+                            title: 'Configure row layouts'
+                          }, '⚙️'),
+                          React.createElement('button', {
+                            className: 'builder-btn builder-btn-secondary builder-btn-sm builder-btn-icon',
+                            onClick: (e) => {
+                              e.stopPropagation();
+                              removeRow(row.id);
+                            }
+                          }, '🗑️')
+                        ),
+
+                        React.createElement('div', {
+                          className: 'row-columns',
+                          style: {
+                            gridTemplateColumns: viewport === 'mobile'
+                              ? (row.mobileColumns || ['1fr']).join(' ')
+                              : row.columns.join(' '),
+                            gap: page.settings.columnGap,
+                            padding: page.settings.rowPadding
+                          }
+                        },
+                          row.columnData.map((colData, colIndex) =>
+                            React.createElement('div', {
+                              key: colIndex,
+                              className: 'column ' + (colData.blocks.length > 0 ? 'has-blocks ' : '') + (draggedBlock && dropTarget?.rowId === row.id && dropTarget?.columnIndex === colIndex ? 'drag-over' : ''),
+                              onDragOver: (e) => {
+                                e.preventDefault();
+                                if (!draggedFromColumn || draggedFromColumn.rowId !== row.id || draggedFromColumn.columnIndex !== colIndex) {
+                                  setDropTarget({ rowId: row.id, columnIndex: colIndex, position: null });
+                                }
+                              },
+                              onDragLeave: () => setDropTarget(null),
+                              onDrop: (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (draggedBlock && !draggedFromColumn) {
+                                  addBlockToColumn(row.id, colIndex, draggedBlock);
+                                }
+                                setDraggedBlock(null);
+                                setDraggedFromColumn(null);
+                                setDropTarget(null);
+                              }
+                            },
+                              React.createElement('div', { className: 'column-label' },
+                                React.createElement('span', null, 'Col ', colIndex + 1),
+                                colData.blocks.length > 0 && React.createElement('span', { className: 'block-count' }, colData.blocks.length)
+                              ),
+
+                              colData.blocks.length === 0
+                                ? React.createElement('div', { className: 'column-empty' },
+                                    React.createElement('div', null, '📦 Drop blocks here'),
+                                    React.createElement('div', { style: { fontSize: '11px', opacity: '0.7' } }, 'Stack multiple blocks vertically')
+                                  )
+                                : React.createElement(React.Fragment, null,
+                                    colData.blocks.map((block, blockIndex) =>
+                                      React.createElement(React.Fragment, { key: block.id },
+                                        // Drop zone before block
+                                        React.createElement('div', {
+                                          className: 'block-drop-zone ' + (dropTarget?.rowId === row.id && dropTarget?.columnIndex === colIndex && dropTarget?.position === blockIndex ? 'drag-over' : ''),
+                                          onDragOver: (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setDropTarget({ rowId: row.id, columnIndex: colIndex, position: blockIndex });
+                                          },
+                                          onDrop: (e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            if (draggedBlock && draggedFromColumn) {
+                                              if (draggedFromColumn.rowId === row.id && draggedFromColumn.columnIndex === colIndex) {
+                                                let targetIndex = blockIndex;
+                                                if (draggedFromColumn.blockIndex < blockIndex) {
+                                                  targetIndex--;
+                                                }
+                                                moveBlockWithinColumn(row.id, colIndex, draggedFromColumn.blockIndex, targetIndex);
+                                              }
+                                            } else if (draggedBlock) {
+                                              addBlockToColumn(row.id, colIndex, draggedBlock, blockIndex);
+                                            }
+                                            setDraggedBlock(null);
+                                            setDraggedFromColumn(null);
+                                            setDropTarget(null);
+                                          }
+                                        },
+                                          dropTarget?.rowId === row.id && dropTarget?.columnIndex === colIndex && dropTarget?.position === blockIndex && React.createElement('span', null, 'Drop here')
+                                        ),
+
+                                        // Block
+                                        React.createElement('div', {
+                                          className: 'block-in-column ' + (editingBlock?.id === block.id ? 'editing ' : '') + (draggedFromColumn?.rowId === row.id && draggedFromColumn?.columnIndex === colIndex && draggedFromColumn?.blockIndex === blockIndex ? 'dragging' : ''),
+                                          draggable: true,
+                                          onDragStart: (e) => {
+                                            setDraggedBlock({ id: block.type, defaultContent: block.content });
+                                            setDraggedFromColumn({ rowId: row.id, columnIndex: colIndex, blockIndex });
+                                            e.dataTransfer.effectAllowed = 'move';
+                                          },
+                                          onDragEnd: () => {
+                                            setDraggedBlock(null);
+                                            setDraggedFromColumn(null);
+                                            setDropTarget(null);
+                                          },
+                                          onClick: (e) => {
+                                            e.stopPropagation();
+                                            if (!draggedFromColumn) {
+                                              setEditingBlock({
+                                                ...block,
+                                                rowId: row.id,
+                                                columnIndex: colIndex
+                                              });
+                                            }
+                                          }
+                                        },
+                                          React.createElement('div', { className: 'block-drag-handle' }, '⋮⋮'),
+                                          editingBlock?.id === block.id && React.createElement('div', { className: 'block-edit-badge' }, 'Editing'),
+                                          React.createElement('button', {
+                                            className: 'block-remove',
+                                            onClick: (e) => {
+                                              e.stopPropagation();
+                                              removeBlock(row.id, colIndex, block.id);
+                                            }
+                                          }, 'Remove'),
+                                          React.createElement(BlockPreview, { block: block, articles: articles })
+                                        )
+                                      )
+                                    ),
+
+                                    // Drop zone after last block
+                                    React.createElement('div', {
+                                      className: 'block-drop-zone ' + (dropTarget?.rowId === row.id && dropTarget?.columnIndex === colIndex && dropTarget?.position === colData.blocks.length ? 'drag-over' : ''),
+                                      onDragOver: (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setDropTarget({ rowId: row.id, columnIndex: colIndex, position: colData.blocks.length });
+                                      },
+                                      onDrop: (e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (draggedBlock && draggedFromColumn) {
+                                          if (draggedFromColumn.rowId === row.id && draggedFromColumn.columnIndex === colIndex) {
+                                            moveBlockWithinColumn(row.id, colIndex, draggedFromColumn.blockIndex, colData.blocks.length - 1);
+                                          }
+                                        } else if (draggedBlock) {
+                                          addBlockToColumn(row.id, colIndex, draggedBlock);
+                                        }
+                                        setDraggedBlock(null);
+                                        setDraggedFromColumn(null);
+                                        setDropTarget(null);
+                                      }
+                                    },
+                                      dropTarget?.rowId === row.id && dropTarget?.columnIndex === colIndex && dropTarget?.position === colData.blocks.length && React.createElement('span', null, 'Drop here')
+                                    ),
+
+                                    React.createElement('div', { className: 'add-block-hint' }, '➕ Drag more blocks here')
+                                  )
+                            )
+                          )
+                        )
+                      )
+                    )
+              )
+            ),
+
+            // Right: Settings/Editor
+            React.createElement('div', { className: 'settings-panel w-80' },
+              editingBlock
+                ? React.createElement(BlockEditor, {
+                    block: editingBlock,
+                    articles: articles,
+                    onUpdate: (newContent) => {
+                      updateBlockContent(
+                        editingBlock.rowId,
+                        editingBlock.columnIndex,
+                        editingBlock.id,
+                        newContent
+                      );
+                    },
+                    onClose: () => setEditingBlock(null)
+                  })
+                : React.createElement(PageSettings, {
+                    page: page,
+                    onChange: setPage,
+                    selectedRow: selectedRow,
+                    setSelectedRow: setSelectedRow
+                  })
+            )
+          )
+        );
+      };
 
       // Image Modal Component
       const ImageModal = ({ isOpen, onClose, onInsert }) => {
@@ -381,7 +2515,7 @@
       };
 
       // Homepage Component
-      const Homepage = ({ articles, onSelectArticle, onNewArticle }) => {
+      const Homepage = ({ articles, onSelectArticle, onNewArticle, onLayoutBuilder }) => {
         const featuredArticle = articles.find(a => a.featured) || articles[0];
         const sideArticles = articles.filter(a => !a.featured).slice(0, 2);
         const trendingArticles = articles.slice(0, 5);
@@ -408,6 +2542,10 @@
                 ),
                 React.createElement('div', { className: 'flex items-center gap-4' },
                   React.createElement('button', { className: 'text-sm text-gray-700 hover:text-gray-900' }, 'Sign In'),
+                  React.createElement('button', {
+                    onClick: onLayoutBuilder,
+                    className: 'px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition-colors flex items-center gap-2'
+                  }, React.createElement(Icon, { name: 'layout-grid', size: 16 }), 'Layout Builder'),
                   React.createElement('button', {
                     onClick: onNewArticle,
                     className: 'px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors'
@@ -519,7 +2657,7 @@
       };
 
       const NewsArticleEditor = () => {
-        const [currentView, setCurrentView] = useState('homepage'); // 'homepage' or 'editor'
+        const [currentView, setCurrentView] = useState('homepage'); // 'homepage', 'editor', or 'layout'
         const [viewMode, setViewMode] = useState('wysiwyg');
         const [articles, setArticles] = useState(sampleArticles);
         const [showImageModal, setShowImageModal] = useState(false);
@@ -866,7 +3004,16 @@
           return React.createElement(Homepage, {
             articles,
             onSelectArticle: handleSelectArticle,
-            onNewArticle: handleNewArticle
+            onNewArticle: handleNewArticle,
+            onLayoutBuilder: () => setCurrentView('layout')
+          });
+        }
+
+        // Show layout builder
+        if (currentView === 'layout') {
+          return React.createElement(PageBuilder, {
+            articles,
+            onBack: () => setCurrentView('homepage')
           });
         }
 
