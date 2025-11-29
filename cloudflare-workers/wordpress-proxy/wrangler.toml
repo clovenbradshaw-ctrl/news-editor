@@ -1,0 +1,50 @@
+# Cloudflare Workers configuration for WordPress Proxy
+name = "contributor-wordpress-proxy"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Environment variables (set via Cloudflare dashboard or wrangler secret)
+[vars]
+WORDPRESS_URL = "https://thecontributor.org"
+
+# KV Namespace for caching
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "YOUR_KV_NAMESPACE_ID"  # Replace with actual ID after creating
+
+# R2 Bucket for image storage (optional)
+[[r2_buckets]]
+binding = "IMAGES_R2"
+bucket_name = "contributor-images"
+
+# Secrets (set via: wrangler secret put WEBHOOK_SECRET)
+# WEBHOOK_SECRET - for authenticating cache invalidation webhooks
+
+# Production environment
+[env.production]
+name = "contributor-wordpress-proxy-prod"
+routes = [
+  { pattern = "api.thecontributor.org/*", zone_name = "thecontributor.org" }
+]
+
+[env.production.vars]
+WORDPRESS_URL = "https://thecontributor.org"
+
+# Staging environment
+[env.staging]
+name = "contributor-wordpress-proxy-staging"
+
+[env.staging.vars]
+WORDPRESS_URL = "https://staging.thecontributor.org"
+
+# Development triggers
+[triggers]
+crons = []
+
+# Build configuration
+[build]
+command = ""
+
+# Observability
+[observability]
+enabled = true
