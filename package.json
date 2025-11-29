@@ -1,7 +1,7 @@
 {
   "name": "news-article-editor",
-  "version": "1.0.0",
-  "description": "Professional news article editor inspired by NYT, Washington Post, and Guardian publishing systems",
+  "version": "2.0.0",
+  "description": "Professional news article editor with enterprise publishing features inspired by NYT Scoop, Washington Post Arc XP, and Guardian Fronts",
   "main": "enhanced-news-editor.jsx",
   "scripts": {
     "dev": "vite",
@@ -116,11 +116,44 @@
     ]
   },
   "integration_examples": {
-    "ghost": "See examples/ghost-integration.js",
-    "wordpress": "See examples/wordpress-integration.js",
-    "documentcloud": "See examples/documentcloud-integration.js",
-    "prosemirror": "See examples/prosemirror-editor.jsx",
-    "tiptap": "See examples/tiptap-editor.jsx",
-    "collaboration": "See examples/yjs-collaboration.jsx"
+    "ghost": "See ghost-integration.js",
+    "wordpress": "See publishing-enhancements.js (WordPressPublisher)",
+    "documentcloud": "See documentcloud-integration.js",
+    "prosemirror": "See tiptap-editor.jsx",
+    "tiptap": "See tiptap-editor.jsx",
+    "collaboration": "See publishing-enhancements.js (Yjs ready)",
+    "breaking_news": "See publishing-enhancements.js (BreakingNewsAlertManager)",
+    "live_blogging": "See publishing-enhancements.js (LiveBlogManager)",
+    "slack": "See publishing-enhancements.js (SlackNewsroomIntegration)",
+    "analytics": "See publishing-enhancements.js (ArticleAnalytics)",
+    "ab_testing": "See publishing-enhancements.js (HeadlineABTesting)",
+    "multi_platform": "See publishing-enhancements.js (MultiPlatformExporter)"
+  },
+  "features_v2": {
+    "enterprise_patterns": [
+      "Breaking news alerts (Guardian Fronts pattern)",
+      "Live blogging (AP/Reuters wire service pattern)",
+      "A/B headline testing (NYT 8-variant pattern)",
+      "Real-time analytics (Guardian Ophan pattern)",
+      "Multi-platform export (Arc XP COPE pattern)",
+      "Slack integration (SF Chronicle/Quartz pattern)",
+      "WordPress publishing (Newspack compatible)",
+      "Keyboard shortcuts (Professional editor pattern)"
+    ],
+    "reading_analytics": [
+      "Flesch Reading Ease score",
+      "Flesch-Kincaid Grade Level",
+      "Word count and reading time",
+      "Engagement predictions",
+      "Shareability scoring"
+    ],
+    "export_formats": [
+      "Apple News Format (ANF)",
+      "AMP HTML",
+      "RSS/Atom feed items",
+      "Plain text (email fallback)",
+      "JSON-LD structured data (SEO)",
+      "Standard HTML/Markdown/JSON"
+    ]
   }
 }
