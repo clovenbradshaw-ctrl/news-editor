@@ -78,7 +78,20 @@
         svg.setAttribute('stroke-width', '2');
         svg.setAttribute('stroke-linecap', 'round');
         svg.setAttribute('stroke-linejoin', 'round');
-        svg.innerHTML = icon[2];
+        // icon[2] is an array of [tagName, attributes] for each path/element
+        const children = icon[2];
+        if (Array.isArray(children)) {
+          children.forEach(child => {
+            if (Array.isArray(child) && child.length >= 2) {
+              const [tagName, attrs] = child;
+              const el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+              Object.entries(attrs || {}).forEach(([key, value]) => {
+                el.setAttribute(key, value);
+              });
+              svg.appendChild(el);
+            }
+          });
+        }
         return svg;
       };
 
@@ -131,6 +144,42 @@
 
         const editorRef = useRef(null);
         const [currentHeadlineIndex, setCurrentHeadlineIndex] = useState(0);
+        const isInitialMount = useRef(true);
+        const [lastSaved, setLastSaved] = useState(null);
+        const [wordCount, setWordCount] = useState(0);
+
+        // Calculate word count and reading time
+        const getTextStats = (html) => {
+          const text = html.replace(/<[^>]*>/g, '').trim();
+          const words = text.split(/\s+/).filter(w => w.length > 0);
+          return {
+            words: words.length,
+            characters: text.length,
+            readingTime: Math.max(1, Math.ceil(words.length / 200))
+          };
+        };
+
+        // Initialize editor content only once on mount
+        useEffect(() => {
+          if (editorRef.current && isInitialMount.current) {
+            editorRef.current.innerHTML = content.body;
+            isInitialMount.current = false;
+            setWordCount(getTextStats(content.body).words);
+          }
+        }, []);
+
+        // Keyboard shortcuts
+        useEffect(() => {
+          const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+              e.preventDefault();
+              saveVersion('Manual save');
+              setLastSaved(new Date());
+            }
+          };
+          document.addEventListener('keydown', handleKeyDown);
+          return () => document.removeEventListener('keydown', handleKeyDown);
+        }, [content]);
 
         useEffect(() => {
           const autoSave = setInterval(() => {
@@ -269,7 +318,9 @@
 
         const handleBodyChange = () => {
           if (editorRef.current) {
-            setContent({ ...content, body: editorRef.current.innerHTML });
+            const html = editorRef.current.innerHTML;
+            setContent(prev => ({ ...prev, body: html }));
+            setWordCount(getTextStats(html).words);
           }
         };
 
@@ -348,7 +399,10 @@
             React.createElement('div', { className: 'max-w-7xl mx-auto px-4 py-3' },
               React.createElement('div', { className: 'flex items-center justify-between' },
                 React.createElement('div', { className: 'flex items-center gap-4' },
-                  React.createElement('h1', { className: 'text-xl font-bold text-gray-800' }, 'News Article Editor'),
+                  React.createElement('div', null,
+                    React.createElement('h1', { className: 'text-xl font-bold text-gray-800' }, 'News Article Editor'),
+                    React.createElement('p', { className: 'text-xs text-gray-500' }, 'Professional publishing inspired by NYT, WaPo & Guardian')
+                  ),
                   React.createElement(StatusBadge)
                 ),
                 React.createElement('div', { className: 'flex items-center gap-3' },
@@ -366,7 +420,7 @@
                     )
                   ),
                   React.createElement('button', {
-                    onClick: () => saveVersion('Manual save'),
+                    onClick: () => { saveVersion('Manual save'); setLastSaved(new Date()); },
                     className: 'flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors'
                   }, React.createElement(Icon, { name: 'save', size: 16 }), 'Save'),
                   React.createElement('button', {
@@ -404,7 +458,8 @@
                   React.createElement('div', { className: 'p-8 border-b border-gray-200' },
                     React.createElement('div', { className: 'mb-4' },
                       React.createElement('div', { className: 'flex items-center gap-2 mb-2' },
-                        React.createElement('label', { className: 'text-sm font-medium text-gray-700' }, 'Headlines'),
+                        React.createElement('label', { className: 'text-sm font-medium text-blue-700' }, 'Headlines'),
+                        React.createElement('span', { className: 'text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded' }, 'A/B Testing'),
                         React.createElement('button', { onClick: addHeadlineVariant, className: 'text-blue-500 hover:text-blue-600' },
                           React.createElement(Icon, { name: 'plus-circle', size: 16 })
                         )
@@ -484,14 +539,15 @@
                       )
                     )
                   ),
-                  // Editor content
+                  // Editor content - no dangerouslySetInnerHTML to preserve cursor position
                   React.createElement('div', {
                     ref: editorRef,
                     contentEditable: true,
                     onInput: handleBodyChange,
-                    dangerouslySetInnerHTML: { __html: content.body },
+                    onBlur: handleBodyChange,
                     className: 'p-8 min-h-[500px] prose max-w-none focus:outline-none',
-                    style: { fontFamily: 'Georgia, serif', fontSize: '18px', lineHeight: '1.8' }
+                    style: { fontFamily: 'Georgia, serif', fontSize: '18px', lineHeight: '1.8' },
+                    suppressContentEditableWarning: true
                   })
                 ),
 
@@ -577,8 +633,13 @@
                   )
                 ),
                 React.createElement('div', { className: 'text-right' },
+                  lastSaved && React.createElement('p', { className: 'text-xs text-green-600 mb-1' },
+                    `Saved ${lastSaved.toLocaleTimeString()}`
+                  ),
                   React.createElement('p', { className: 'text-xs text-gray-500' },
-                    `${content.body.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w).length} words`
+                    `${wordCount} words`,
+                    React.createElement('span', { className: 'mx-2' }, '|'),
+                    `${getTextStats(content.body).readingTime} min read`
                   )
                 )
               )
