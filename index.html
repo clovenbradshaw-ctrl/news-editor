@@ -52,6 +52,26 @@
       .prose li { margin: 0.25em 0; }
       .prose a { color: #3b82f6; text-decoration: underline; }
       .prose code { background: #f3f4f6; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
+      .prose img { max-width: 100%; height: auto; margin: 1.5em 0; border-radius: 4px; }
+      .prose figure { margin: 2em 0; }
+      .prose figcaption { color: #6b7280; font-size: 0.875rem; margin-top: 0.5em; font-style: italic; text-align: center; }
+
+      /* Image styles */
+      .article-image { position: relative; margin: 1.5em 0; }
+      .article-image.full-width { width: 100%; }
+      .article-image.medium { width: 75%; margin-left: auto; margin-right: auto; }
+      .article-image.small { width: 50%; }
+      .article-image.float-left { float: left; width: 40%; margin-right: 1.5em; margin-bottom: 1em; }
+      .article-image.float-right { float: right; width: 40%; margin-left: 1.5em; margin-bottom: 1em; }
+      .article-image img { width: 100%; height: auto; display: block; }
+
+      /* Homepage styles */
+      .article-card { transition: transform 0.2s, box-shadow 0.2s; }
+      .article-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+      .category-label { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+
+      /* Modal styles */
+      .modal-backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
     </style>
   </head>
   <body>
@@ -78,7 +98,6 @@
         svg.setAttribute('stroke-width', '2');
         svg.setAttribute('stroke-linecap', 'round');
         svg.setAttribute('stroke-linejoin', 'round');
-        // icon[2] is an array of [tagName, attributes] for each path/element
         const children = icon[2];
         if (Array.isArray(children)) {
           children.forEach(child => {
@@ -109,14 +128,408 @@
 
       const { useState, useRef, useEffect } = React;
 
+      // Sample articles for homepage demo
+      const sampleArticles = [
+        {
+          id: 1,
+          title: 'Colleges Are Preparing to Self-Lobotomize',
+          subtitle: 'The skills that students will need in an age of automation are precisely those that are eroded by inserting AI into the educational process.',
+          byline: 'Michael Clune',
+          category: 'Ideas',
+          date: 'November 29, 2025',
+          image: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80',
+          imageCredit: 'Illustration by The Atlantic',
+          featured: true,
+          body: '<p>After three years of doing essentially nothing to address the rise of generative AI, colleges are now scrambling to do too much...</p>'
+        },
+        {
+          id: 2,
+          title: 'The Comedian Dismantling the Alpha-Male Persona',
+          subtitle: 'A fresh take on masculinity in modern comedy.',
+          byline: 'Shirley Li',
+          category: 'Culture',
+          date: 'November 29, 2025',
+          image: 'https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=600&q=80',
+          imageCredit: 'HBO',
+          body: '<p>Comedy is evolving...</p>'
+        },
+        {
+          id: 3,
+          title: 'Get Your Kid a Watch',
+          subtitle: 'Teaching time management starts with analog.',
+          byline: 'Ian Bogost',
+          category: 'Family',
+          date: 'November 29, 2025',
+          image: 'https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=600&q=80',
+          imageCredit: 'Illustration by Kyle Smart',
+          body: '<p>In an age of smartphones...</p>'
+        },
+        {
+          id: 4,
+          title: 'The Limits of the Year\'s Most Heartbreaking Film',
+          subtitle: 'Hamnet imagines the inspiration for Hamlet as a tragic, punishing love story.',
+          byline: 'David Sims',
+          category: 'Movies',
+          date: 'November 28, 2025',
+          image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
+          imageCredit: 'Focus Features',
+          body: '<p>The new film explores...</p>'
+        },
+        {
+          id: 5,
+          title: 'Black Friday Nostalgia',
+          subtitle: 'If we\'re going to worship consumerism and consumption, let\'s at least do it together.',
+          byline: 'Annie Joy Williams',
+          category: 'Opinion',
+          date: 'November 28, 2025',
+          image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=600&q=80',
+          imageCredit: 'Getty',
+          body: '<p>The tradition continues...</p>'
+        },
+        {
+          id: 6,
+          title: 'How to Change Your Sleep Patterns',
+          subtitle: 'A guide to better rest.',
+          byline: 'Isabel Fattal',
+          category: 'Health',
+          date: 'November 28, 2025',
+          image: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600&q=80',
+          body: '<p>Sleep experts recommend...</p>'
+        }
+      ];
+
+      // Image Modal Component
+      const ImageModal = ({ isOpen, onClose, onInsert }) => {
+        const [imageUrl, setImageUrl] = useState('');
+        const [caption, setCaption] = useState('');
+        const [credit, setCredit] = useState('');
+        const [size, setSize] = useState('full-width');
+        const [alignment, setAlignment] = useState('center');
+        const [previewError, setPreviewError] = useState(false);
+
+        const handleInsert = () => {
+          if (!imageUrl) return;
+          onInsert({ url: imageUrl, caption, credit, size, alignment });
+          setImageUrl('');
+          setCaption('');
+          setCredit('');
+          setSize('full-width');
+          setAlignment('center');
+          onClose();
+        };
+
+        if (!isOpen) return null;
+
+        return React.createElement('div', {
+          className: 'fixed inset-0 z-50 flex items-center justify-center modal-backdrop',
+          onClick: (e) => e.target === e.currentTarget && onClose()
+        },
+          React.createElement('div', { className: 'bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden' },
+            // Header
+            React.createElement('div', { className: 'flex items-center justify-between px-6 py-4 border-b border-gray-200' },
+              React.createElement('h2', { className: 'text-lg font-semibold text-gray-900' }, 'Insert Image'),
+              React.createElement('button', {
+                onClick: onClose,
+                className: 'p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100'
+              }, React.createElement(Icon, { name: 'x', size: 20 }))
+            ),
+            // Body
+            React.createElement('div', { className: 'p-6 space-y-4' },
+              // Image URL
+              React.createElement('div', null,
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Image URL'),
+                React.createElement('input', {
+                  type: 'url',
+                  value: imageUrl,
+                  onChange: (e) => { setImageUrl(e.target.value); setPreviewError(false); },
+                  placeholder: 'https://example.com/image.jpg',
+                  className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                })
+              ),
+              // Preview
+              imageUrl && React.createElement('div', { className: 'border border-gray-200 rounded-lg p-4 bg-gray-50' },
+                React.createElement('p', { className: 'text-xs text-gray-500 mb-2' }, 'Preview'),
+                previewError
+                  ? React.createElement('div', { className: 'text-center py-8 text-gray-400' },
+                      React.createElement(Icon, { name: 'image-off', size: 32 }),
+                      React.createElement('p', { className: 'mt-2 text-sm' }, 'Unable to load image')
+                    )
+                  : React.createElement('img', {
+                      src: imageUrl,
+                      alt: 'Preview',
+                      className: 'max-h-48 mx-auto rounded',
+                      onError: () => setPreviewError(true)
+                    })
+              ),
+              // Caption
+              React.createElement('div', null,
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Caption (optional)'),
+                React.createElement('input', {
+                  type: 'text',
+                  value: caption,
+                  onChange: (e) => setCaption(e.target.value),
+                  placeholder: 'Describe this image...',
+                  className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                })
+              ),
+              // Credit
+              React.createElement('div', null,
+                React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Photo Credit (optional)'),
+                React.createElement('input', {
+                  type: 'text',
+                  value: credit,
+                  onChange: (e) => setCredit(e.target.value),
+                  placeholder: 'Photo by...',
+                  className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                })
+              ),
+              // Size and Alignment
+              React.createElement('div', { className: 'grid grid-cols-2 gap-4' },
+                React.createElement('div', null,
+                  React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Size'),
+                  React.createElement('select', {
+                    value: size,
+                    onChange: (e) => setSize(e.target.value),
+                    className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  },
+                    React.createElement('option', { value: 'full-width' }, 'Full Width'),
+                    React.createElement('option', { value: 'medium' }, 'Medium (75%)'),
+                    React.createElement('option', { value: 'small' }, 'Small (50%)'),
+                    React.createElement('option', { value: 'float-left' }, 'Float Left'),
+                    React.createElement('option', { value: 'float-right' }, 'Float Right')
+                  )
+                ),
+                React.createElement('div', null,
+                  React.createElement('label', { className: 'block text-sm font-medium text-gray-700 mb-1' }, 'Alignment'),
+                  React.createElement('select', {
+                    value: alignment,
+                    onChange: (e) => setAlignment(e.target.value),
+                    className: 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
+                  },
+                    React.createElement('option', { value: 'center' }, 'Center'),
+                    React.createElement('option', { value: 'left' }, 'Left'),
+                    React.createElement('option', { value: 'right' }, 'Right')
+                  )
+                )
+              )
+            ),
+            // Footer
+            React.createElement('div', { className: 'flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200' },
+              React.createElement('button', {
+                onClick: onClose,
+                className: 'px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors'
+              }, 'Cancel'),
+              React.createElement('button', {
+                onClick: handleInsert,
+                disabled: !imageUrl,
+                className: 'px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+              }, React.createElement(Icon, { name: 'image', size: 16 }), 'Insert Image')
+            )
+          )
+        );
+      };
+
+      // Article Card Component
+      const ArticleCard = ({ article, size = 'medium', onClick }) => {
+        const sizeClasses = {
+          small: 'col-span-1',
+          medium: 'col-span-1',
+          large: 'col-span-2 row-span-2',
+          featured: 'col-span-2'
+        };
+
+        if (size === 'list') {
+          return React.createElement('div', {
+            className: 'flex gap-4 py-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded',
+            onClick
+          },
+            React.createElement('div', { className: 'flex-1' },
+              React.createElement('h4', { className: 'font-semibold text-gray-900 text-sm leading-tight mb-1 hover:text-blue-600' }, article.title),
+              React.createElement('p', { className: 'text-xs text-gray-500 uppercase tracking-wide' }, article.byline)
+            ),
+            article.image && React.createElement('img', {
+              src: article.image,
+              alt: article.title,
+              className: 'w-16 h-16 object-cover rounded'
+            })
+          );
+        }
+
+        return React.createElement('div', {
+          className: `article-card bg-white rounded-lg overflow-hidden cursor-pointer ${sizeClasses[size]}`,
+          onClick
+        },
+          article.image && React.createElement('div', { className: 'relative' },
+            React.createElement('img', {
+              src: article.image,
+              alt: article.title,
+              className: `w-full object-cover ${size === 'large' || size === 'featured' ? 'h-80' : 'h-48'}`
+            }),
+            article.imageCredit && React.createElement('p', {
+              className: 'absolute bottom-2 left-2 text-xs text-white bg-black/50 px-2 py-1 rounded'
+            }, article.imageCredit)
+          ),
+          React.createElement('div', { className: 'p-4' },
+            article.category && React.createElement('p', { className: 'category-label text-red-600 font-semibold mb-2' }, article.category),
+            React.createElement('h3', {
+              className: `font-bold text-gray-900 mb-2 leading-tight ${size === 'large' || size === 'featured' ? 'text-2xl' : 'text-lg'}`
+            }, article.title),
+            article.subtitle && React.createElement('p', { className: 'text-gray-600 text-sm mb-3 line-clamp-2' }, article.subtitle),
+            React.createElement('p', { className: 'text-xs text-gray-500 uppercase tracking-wide' }, article.byline)
+          )
+        );
+      };
+
+      // Homepage Component
+      const Homepage = ({ articles, onSelectArticle, onNewArticle }) => {
+        const featuredArticle = articles.find(a => a.featured) || articles[0];
+        const sideArticles = articles.filter(a => !a.featured).slice(0, 2);
+        const trendingArticles = articles.slice(0, 5);
+        const gridArticles = articles.filter(a => !a.featured).slice(2, 6);
+
+        return React.createElement('div', { className: 'min-h-screen bg-white' },
+          // Header
+          React.createElement('header', { className: 'border-b border-gray-200' },
+            React.createElement('div', { className: 'max-w-7xl mx-auto px-4' },
+              // Top nav
+              React.createElement('div', { className: 'flex items-center justify-between py-3 border-b border-gray-100' },
+                React.createElement('div', { className: 'flex items-center gap-6' },
+                  React.createElement('button', { className: 'p-2 hover:bg-gray-100 rounded' },
+                    React.createElement(Icon, { name: 'menu', size: 20 })
+                  ),
+                  React.createElement('button', { className: 'p-2 hover:bg-gray-100 rounded' },
+                    React.createElement(Icon, { name: 'search', size: 20 })
+                  ),
+                  React.createElement('nav', { className: 'hidden md:flex items-center gap-4 text-sm' },
+                    React.createElement('a', { href: '#', className: 'text-gray-700 hover:text-gray-900' }, 'Popular'),
+                    React.createElement('a', { href: '#', className: 'text-gray-700 hover:text-gray-900' }, 'Latest'),
+                    React.createElement('a', { href: '#', className: 'text-gray-700 hover:text-gray-900' }, 'Newsletters')
+                  )
+                ),
+                React.createElement('div', { className: 'flex items-center gap-4' },
+                  React.createElement('button', { className: 'text-sm text-gray-700 hover:text-gray-900' }, 'Sign In'),
+                  React.createElement('button', {
+                    onClick: onNewArticle,
+                    className: 'px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors'
+                  }, 'New Article')
+                )
+              ),
+              // Logo
+              React.createElement('div', { className: 'py-6 text-center' },
+                React.createElement('h1', { className: 'text-5xl font-serif font-bold italic text-gray-900' }, 'The Editor'),
+                React.createElement('p', { className: 'text-sm text-gray-500 mt-1' }, 'Professional News Publishing Platform')
+              )
+            )
+          ),
+          // Promotional banner
+          React.createElement('div', { className: 'bg-amber-50 border-y border-amber-200 py-3' },
+            React.createElement('div', { className: 'max-w-7xl mx-auto px-4 text-center' },
+              React.createElement('p', { className: 'text-sm text-amber-800' },
+                'Give a year of ',
+                React.createElement('span', { className: 'italic' }, 'The Editor'),
+                ', and we\'ll include our signature tote for free.*'
+              )
+            )
+          ),
+          // Main content
+          React.createElement('main', { className: 'max-w-7xl mx-auto px-4 py-8' },
+            React.createElement('div', { className: 'grid grid-cols-12 gap-8' },
+              // Left column - sidebar articles
+              React.createElement('div', { className: 'col-span-12 md:col-span-3 space-y-6' },
+                sideArticles.map(article =>
+                  React.createElement('div', { key: article.id, className: 'cursor-pointer', onClick: () => onSelectArticle(article) },
+                    article.image && React.createElement('img', {
+                      src: article.image,
+                      alt: article.title,
+                      className: 'w-full h-48 object-cover rounded-lg mb-3'
+                    }),
+                    article.imageCredit && React.createElement('p', { className: 'text-xs text-gray-400 mb-2' }, article.imageCredit),
+                    article.category && React.createElement('p', { className: 'category-label text-red-600 font-semibold mb-1' }, article.category),
+                    React.createElement('h3', { className: 'font-bold text-gray-900 text-lg leading-tight mb-2 hover:text-blue-600' }, article.title),
+                    React.createElement('p', { className: 'text-xs text-gray-500 uppercase tracking-wide' }, article.byline)
+                  )
+                )
+              ),
+              // Center column - featured article
+              React.createElement('div', { className: 'col-span-12 md:col-span-6' },
+                featuredArticle && React.createElement('div', {
+                  className: 'cursor-pointer',
+                  onClick: () => onSelectArticle(featuredArticle)
+                },
+                  featuredArticle.image && React.createElement('div', { className: 'relative' },
+                    React.createElement('img', {
+                      src: featuredArticle.image,
+                      alt: featuredArticle.title,
+                      className: 'w-full h-96 object-cover rounded-lg'
+                    }),
+                    featuredArticle.imageCredit && React.createElement('p', {
+                      className: 'text-xs text-gray-500 mt-2'
+                    }, featuredArticle.imageCredit)
+                  ),
+                  React.createElement('div', { className: 'mt-4 text-center' },
+                    React.createElement('h2', { className: 'font-serif text-3xl font-bold text-gray-900 leading-tight mb-3 hover:text-blue-600' },
+                      featuredArticle.title
+                    ),
+                    featuredArticle.subtitle && React.createElement('p', { className: 'text-gray-600 text-lg mb-3' },
+                      featuredArticle.subtitle
+                    ),
+                    React.createElement('p', { className: 'text-sm text-gray-500 uppercase tracking-wide' },
+                      featuredArticle.byline
+                    )
+                  )
+                )
+              ),
+              // Right column - trending
+              React.createElement('div', { className: 'col-span-12 md:col-span-3' },
+                React.createElement('h3', { className: 'font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200' }, 'Trending'),
+                React.createElement('div', { className: 'space-y-0' },
+                  trendingArticles.map(article =>
+                    React.createElement(ArticleCard, {
+                      key: article.id,
+                      article,
+                      size: 'list',
+                      onClick: () => onSelectArticle(article)
+                    })
+                  )
+                )
+              )
+            ),
+            // Grid section
+            React.createElement('div', { className: 'mt-12 pt-8 border-t border-gray-200' },
+              React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-4 gap-6' },
+                gridArticles.map(article =>
+                  React.createElement(ArticleCard, {
+                    key: article.id,
+                    article,
+                    size: 'medium',
+                    onClick: () => onSelectArticle(article)
+                  })
+                )
+              )
+            )
+          ),
+          // Footer
+          React.createElement('footer', { className: 'bg-gray-900 text-white py-12 mt-16' },
+            React.createElement('div', { className: 'max-w-7xl mx-auto px-4 text-center' },
+              React.createElement('h2', { className: 'text-2xl font-serif italic mb-4' }, 'The Editor'),
+              React.createElement('p', { className: 'text-gray-400 text-sm' }, 'Professional news publishing inspired by NYT, WaPo & Guardian')
+            )
+          )
+        );
+      };
+
       const NewsArticleEditor = () => {
+        const [currentView, setCurrentView] = useState('homepage'); // 'homepage' or 'editor'
         const [viewMode, setViewMode] = useState('wysiwyg');
+        const [articles, setArticles] = useState(sampleArticles);
+        const [showImageModal, setShowImageModal] = useState(false);
         const [content, setContent] = useState({
           title: 'Article Title',
           subtitle: '',
           byline: 'By Your Name',
           date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
           body: '<p>Start writing your investigative article here...</p>',
+          featuredImage: null,
           metadata: {
             tags: [],
             categories: [],
@@ -148,7 +561,6 @@
         const [lastSaved, setLastSaved] = useState(null);
         const [wordCount, setWordCount] = useState(0);
 
-        // Calculate word count and reading time
         const getTextStats = (html) => {
           const text = html.replace(/<[^>]*>/g, '').trim();
           const words = text.split(/\s+/).filter(w => w.length > 0);
@@ -159,16 +571,14 @@
           };
         };
 
-        // Initialize editor content only once on mount
         useEffect(() => {
-          if (editorRef.current && isInitialMount.current) {
+          if (editorRef.current && isInitialMount.current && currentView === 'editor') {
             editorRef.current.innerHTML = content.body;
             isInitialMount.current = false;
             setWordCount(getTextStats(content.body).words);
           }
-        }, []);
+        }, [currentView]);
 
-        // Keyboard shortcuts
         useEffect(() => {
           const handleKeyDown = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -183,10 +593,12 @@
 
         useEffect(() => {
           const autoSave = setInterval(() => {
-            saveVersion('Auto-saved');
+            if (currentView === 'editor') {
+              saveVersion('Auto-saved');
+            }
           }, 60000);
           return () => clearInterval(autoSave);
-        }, [content]);
+        }, [content, currentView]);
 
         const saveVersion = (action) => {
           const newHistory = [
@@ -220,6 +632,7 @@
             .replace(/<i>(.*?)<\/i>/g, '*$1*')
             .replace(/<code>(.*?)<\/code>/g, '`$1`')
             .replace(/<a href="(.*?)">(.*?)<\/a>/g, '[$2]($1)')
+            .replace(/<figure[^>]*>.*?<img src="(.*?)"[^>]*alt="(.*?)"[^>]*>.*?<figcaption>(.*?)<\/figcaption>.*?<\/figure>/gs, '![$2]($1)\n*$3*\n\n')
             .replace(/<img src="(.*?)".*?alt="(.*?)".*?>/g, '![$2]($1)')
             .replace(/<ul>/g, '\n')
             .replace(/<\/ul>/g, '\n')
@@ -258,7 +671,6 @@
 
         const getFullDocument = (format) => {
           const bodyContent = format === 'markdown' ? htmlToMarkdown(content.body) : content.body;
-
           if (format === 'markdown') {
             let md = `# ${content.title}\n\n`;
             if (content.subtitle) md += `## ${content.subtitle}\n\n`;
@@ -292,6 +704,9 @@
     .date { color: #666; margin-bottom: 2em; }
     p { margin: 1.2em 0; font-size: 1.1em; }
     blockquote { border-left: 4px solid #0066cc; margin: 1.5em 0; padding-left: 1.5em; color: #444; font-style: italic; }
+    figure { margin: 2em 0; }
+    figure img { width: 100%; height: auto; }
+    figcaption { color: #666; font-size: 0.9em; margin-top: 0.5em; font-style: italic; }
   </style>
 </head>
 <body>
@@ -329,13 +744,66 @@
           if (url) execCommand('createLink', url);
         };
 
-        const insertImage = () => {
-          const url = prompt('Enter image URL:');
-          if (url) {
-            const alt = prompt('Enter image description:');
-            document.execCommand('insertHTML', false, `<img src="${url}" alt="${alt || 'Image'}" style="max-width: 100%;" />`);
-            handleBodyChange();
+        const insertImage = (imageData) => {
+          let html = '';
+          const alignClass = imageData.alignment === 'center' ? 'margin-left: auto; margin-right: auto;' :
+                            imageData.alignment === 'right' ? 'margin-left: auto;' : '';
+          const sizeStyle = imageData.size === 'full-width' ? 'width: 100%;' :
+                           imageData.size === 'medium' ? 'width: 75%;' :
+                           imageData.size === 'small' ? 'width: 50%;' :
+                           imageData.size === 'float-left' ? 'float: left; width: 40%; margin-right: 1.5em; margin-bottom: 1em;' :
+                           imageData.size === 'float-right' ? 'float: right; width: 40%; margin-left: 1.5em; margin-bottom: 1em;' : '';
+
+          if (imageData.caption || imageData.credit) {
+            html = `<figure style="${sizeStyle} ${alignClass}">
+              <img src="${imageData.url}" alt="${imageData.caption || 'Image'}" style="width: 100%; height: auto; border-radius: 4px;" />
+              <figcaption style="color: #666; font-size: 0.875rem; margin-top: 0.5em; font-style: italic;">
+                ${imageData.caption || ''}${imageData.caption && imageData.credit ? ' ' : ''}${imageData.credit ? `<span style="color: #999;">${imageData.credit}</span>` : ''}
+              </figcaption>
+            </figure>`;
+          } else {
+            html = `<img src="${imageData.url}" alt="Image" style="${sizeStyle} ${alignClass} max-width: 100%; height: auto; border-radius: 4px; margin: 1em 0;" />`;
           }
+
+          document.execCommand('insertHTML', false, html);
+          handleBodyChange();
+        };
+
+        const handleSelectArticle = (article) => {
+          setContent({
+            ...content,
+            title: article.title,
+            subtitle: article.subtitle || '',
+            byline: article.byline,
+            date: article.date,
+            body: article.body,
+            featuredImage: article.image ? { url: article.image, credit: article.imageCredit } : null,
+            metadata: {
+              ...content.metadata,
+              categories: article.category ? [article.category] : []
+            }
+          });
+          isInitialMount.current = true;
+          setCurrentView('editor');
+        };
+
+        const handleNewArticle = () => {
+          setContent({
+            title: 'Article Title',
+            subtitle: '',
+            byline: 'By Your Name',
+            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            body: '<p>Start writing your investigative article here...</p>',
+            featuredImage: null,
+            metadata: { tags: [], categories: [], seo: { metaDescription: '', keywords: [] } },
+            headlines: [{ text: 'Article Title', tested: false, clickRate: null }],
+            sources: [],
+            documents: [],
+            editorialNotes: [],
+            status: 'draft'
+          });
+          isInitialMount.current = true;
+          setCurrentView('editor');
         };
 
         const addSource = () => {
@@ -393,12 +861,33 @@
           }, content.status.charAt(0).toUpperCase() + content.status.slice(1));
         };
 
+        // Show homepage
+        if (currentView === 'homepage') {
+          return React.createElement(Homepage, {
+            articles,
+            onSelectArticle: handleSelectArticle,
+            onNewArticle: handleNewArticle
+          });
+        }
+
+        // Show editor
         return React.createElement('div', { className: 'min-h-screen bg-gray-50' },
+          // Image Modal
+          React.createElement(ImageModal, {
+            isOpen: showImageModal,
+            onClose: () => setShowImageModal(false),
+            onInsert: insertImage
+          }),
           // Top Navigation
-          React.createElement('div', { className: 'bg-white border-b border-gray-200 sticky top-0 z-50' },
+          React.createElement('div', { className: 'bg-white border-b border-gray-200 sticky top-0 z-40' },
             React.createElement('div', { className: 'max-w-7xl mx-auto px-4 py-3' },
               React.createElement('div', { className: 'flex items-center justify-between' },
                 React.createElement('div', { className: 'flex items-center gap-4' },
+                  React.createElement('button', {
+                    onClick: () => setCurrentView('homepage'),
+                    className: 'flex items-center gap-2 text-gray-600 hover:text-gray-900'
+                  }, React.createElement(Icon, { name: 'arrow-left', size: 20 }), 'Back'),
+                  React.createElement('div', { className: 'h-6 w-px bg-gray-300' }),
                   React.createElement('div', null,
                     React.createElement('h1', { className: 'text-xl font-bold text-gray-800' }, 'News Article Editor'),
                     React.createElement('p', { className: 'text-xs text-gray-500' }, 'Professional publishing inspired by NYT, WaPo & Guardian')
@@ -406,7 +895,6 @@
                   React.createElement(StatusBadge)
                 ),
                 React.createElement('div', { className: 'flex items-center gap-3' },
-                  // View mode switcher
                   React.createElement('div', { className: 'flex gap-1 bg-gray-100 rounded p-1' },
                     ['wysiwyg', 'markdown', 'html'].map(mode =>
                       React.createElement('button', {
@@ -444,15 +932,54 @@
                     React.createElement(ToolbarButton, { icon: 'bold', label: 'Bold', onClick: () => execCommand('bold') }),
                     React.createElement(ToolbarButton, { icon: 'italic', label: 'Italic', onClick: () => execCommand('italic') }),
                     React.createElement('div', { className: 'w-px bg-gray-300 mx-1' }),
-                    React.createElement(ToolbarButton, { icon: 'type', label: 'Heading 1', onClick: () => execCommand('formatBlock', '<h1>') }),
-                    React.createElement(ToolbarButton, { icon: 'type', label: 'Heading 2', onClick: () => execCommand('formatBlock', '<h2>') }),
+                    React.createElement(ToolbarButton, { icon: 'heading-1', label: 'Heading 1', onClick: () => execCommand('formatBlock', '<h1>') }),
+                    React.createElement(ToolbarButton, { icon: 'heading-2', label: 'Heading 2', onClick: () => execCommand('formatBlock', '<h2>') }),
+                    React.createElement(ToolbarButton, { icon: 'heading-3', label: 'Heading 3', onClick: () => execCommand('formatBlock', '<h3>') }),
                     React.createElement('div', { className: 'w-px bg-gray-300 mx-1' }),
                     React.createElement(ToolbarButton, { icon: 'list', label: 'Bullet List', onClick: () => execCommand('insertUnorderedList') }),
                     React.createElement(ToolbarButton, { icon: 'list-ordered', label: 'Numbered List', onClick: () => execCommand('insertOrderedList') }),
                     React.createElement('div', { className: 'w-px bg-gray-300 mx-1' }),
                     React.createElement(ToolbarButton, { icon: 'quote', label: 'Quote', onClick: () => execCommand('formatBlock', '<blockquote>') }),
                     React.createElement(ToolbarButton, { icon: 'link', label: 'Insert Link', onClick: insertLink }),
-                    React.createElement(ToolbarButton, { icon: 'image', label: 'Insert Image', onClick: insertImage })
+                    React.createElement('button', {
+                      onClick: () => setShowImageModal(true),
+                      className: 'flex items-center gap-1 px-3 py-2 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors',
+                      title: 'Insert Image'
+                    }, React.createElement(Icon, { name: 'image', size: 18 }), React.createElement('span', { className: 'text-sm' }, 'Image')),
+                    React.createElement('div', { className: 'w-px bg-gray-300 mx-1' }),
+                    React.createElement(ToolbarButton, { icon: 'align-left', label: 'Align Left', onClick: () => execCommand('justifyLeft') }),
+                    React.createElement(ToolbarButton, { icon: 'align-center', label: 'Align Center', onClick: () => execCommand('justifyCenter') }),
+                    React.createElement(ToolbarButton, { icon: 'align-right', label: 'Align Right', onClick: () => execCommand('justifyRight') })
+                  ),
+                  // Featured Image
+                  content.featuredImage && React.createElement('div', { className: 'relative' },
+                    React.createElement('img', {
+                      src: content.featuredImage.url,
+                      alt: content.title,
+                      className: 'w-full h-80 object-cover'
+                    }),
+                    content.featuredImage.credit && React.createElement('p', {
+                      className: 'absolute bottom-2 left-4 text-xs text-white bg-black/50 px-2 py-1 rounded'
+                    }, content.featuredImage.credit),
+                    React.createElement('button', {
+                      onClick: () => setContent({ ...content, featuredImage: null }),
+                      className: 'absolute top-2 right-2 p-2 bg-white/90 rounded-full hover:bg-white text-gray-600'
+                    }, React.createElement(Icon, { name: 'x', size: 16 }))
+                  ),
+                  // Add featured image button
+                  !content.featuredImage && React.createElement('div', {
+                    className: 'border-b border-gray-200 p-4 bg-gray-50'
+                  },
+                    React.createElement('button', {
+                      onClick: () => {
+                        const url = prompt('Enter featured image URL:');
+                        if (url) {
+                          const credit = prompt('Photo credit (optional):');
+                          setContent({ ...content, featuredImage: { url, credit } });
+                        }
+                      },
+                      className: 'flex items-center gap-2 text-gray-500 hover:text-gray-700'
+                    }, React.createElement(Icon, { name: 'image-plus', size: 20 }), 'Add Featured Image')
                   ),
                   // Article metadata
                   React.createElement('div', { className: 'p-8 border-b border-gray-200' },
@@ -534,12 +1061,12 @@
                               metadata: { ...content.metadata, tags: content.metadata.tags.filter((_, i) => i !== idx) }
                             }),
                             className: 'hover:text-blue-900'
-                          }, React.createElement(Icon, { name: 'trash-2', size: 12 }))
+                          }, React.createElement(Icon, { name: 'x', size: 12 }))
                         )
                       )
                     )
                   ),
-                  // Editor content - no dangerouslySetInnerHTML to preserve cursor position
+                  // Editor content
                   React.createElement('div', {
                     ref: editorRef,
                     contentEditable: true,
