@@ -1,56 +1,68 @@
-# Hybrid WordPress + Serverless Architecture
+# Direct WordPress Architecture (Simplified)
 
-This guide explains how to set up a hybrid architecture that uses WordPress's MySQL database as an event store while having a custom serverless React frontend.
+This guide explains the simplified architecture that uses WordPress's REST API directly with no middleware. Just WordPress + React.
 
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────┐
-│         WORDPRESS (Backend Only)                │
-│  • MySQL Database (event store)                 │
-│  • WordPress Admin (editors use this)           │
-│  • ActivityStreams plugin for events            │
-│  • REST API / GraphQL endpoint                  │
-└─────────────────┬───────────────────────────────┘
-                  │
-                  │ API calls
-                  ↓
-┌─────────────────────────────────────────────────┐
-│      CLOUDFLARE WORKERS (Middleware)            │
-│  • Caches WordPress API responses in KV         │
-│  • Handles image optimization (R2)              │
-│  • Serverless edge functions                    │
-└─────────────────┬───────────────────────────────┘
-                  │
-                  │ Delivers to
-                  ↓
-┌─────────────────────────────────────────────────┐
-│         REACT FRONTEND (Cloudflare Pages)       │
-│  • Custom editor UI                             │
-│  • Homepage layout manager                      │
-│  • Version history viewer                       │
-│  • Scheduling interface                         │
-└─────────────────────────────────────────────────┘
+┌────────────────────────────────────────┐
+│  PUBLIC USERS (no login needed)        │
+│  → GET requests to WordPress API       │
+│  → Read articles, view homepage, etc.  │
+└───────────────┬────────────────────────┘
+                │
+                ↓
+┌────────────────────────────────────────┐
+│     WORDPRESS REST API                 │
+│  • GET /wp-json/contributor/v1/articles│
+│  • GET /wp-json/contributor/v1/events  │
+│  • MySQL Database (events table)       │
+│  • Authentication: App Passwords       │
+└───────────────┬────────────────────────┘
+                ↑
+                │ Authenticated requests
+                │
+┌───────────────┴────────────────────────┐
+│  EDITORS (login required)              │
+│  • React admin interface               │
+│  • POST/PUT to WordPress API           │
+│  • Application Password auth           │
+└────────────────────────────────────────┘
 ```
+
+## Why This Architecture?
+
+- **No middleware complexity** - Direct WordPress API access
+- **No Workers costs** - Just static hosting for React
+- **Familiar WordPress admin** - Option to use it OR custom React admin
+- **Event sourcing** - Full history in MySQL
+- **Public transparency** - Anyone can see edit history
+- **Free hosting** - Netlify/Vercel free tier for frontend
+- **Simple auth** - WordPress Application Passwords (built-in)
+- **Easy migration** - Existing data stays in WordPress
+
+## Cost Breakdown
+
+| Component | Cost |
+|-----------|------|
+| WordPress Hosting | $0-20/month (existing) |
+| React App Hosting | **$0** (Netlify/Vercel/GitHub Pages free tier) |
+| **Total** | **$0-20/month** |
 
 ## Components
 
-### 1. WordPress Plugin: `contributor-activitystreams`
+### 1. WordPress Plugin: `contributor-events`
 
 Located in: `wordpress-plugin/contributor-activitystreams/`
 
-This plugin logs all content changes as ActivityStreams events:
-
 **Features:**
-- Stores events in a custom `activitystreams_events` table
-- Captures Create, Update, Delete, Publish, Retract events
-- Includes full article data with each event
-- ACF (Advanced Custom Fields) support
-- Yoast SEO metadata support
-- WPGraphQL integration
-- REST API endpoints for event queries
+- Logs all content changes as ActivityStreams events
+- Custom `contributor_events` database table
+- Public REST API endpoints (no auth needed for reading)
+- Authenticated endpoints for editing
+- CORS support for React frontends
 - Admin interface for viewing events
-- Cache invalidation webhooks
+- Homepage layout management
 
 **Installation:**
 ```bash
@@ -60,99 +72,147 @@ cp -r wordpress-plugin/contributor-activitystreams wp-content/plugins/
 # Activate via WP-CLI
 wp plugin activate contributor-activitystreams
 
-# Or activate via WordPress Admin
+# Or activate via WordPress Admin → Plugins
 ```
 
-**REST API Endpoints:**
-- `GET /wp-json/contributor/v1/events/post/{id}` - Get events for a post
-- `GET /wp-json/contributor/v1/events` - List all events (paginated)
-- `GET /wp-json/contributor/v1/events/stream` - Real-time event stream
-- `GET /wp-json/contributor/v1/events/replay/{id}` - Rebuild state at version
-
-### 2. Cloudflare Workers Middleware
-
-Located in: `cloudflare-workers/wordpress-proxy/`
-
-Provides caching and optimization layer between frontend and WordPress.
-
-**Features:**
-- KV-based response caching
-- Automatic cache invalidation
-- Image optimization via R2
-- CORS handling
-- Health monitoring
-
-**Setup:**
-```bash
-cd cloudflare-workers/wordpress-proxy
-
-# Install Wrangler CLI
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Create KV namespace
-wrangler kv:namespace create CACHE_KV
-# Update wrangler.toml with the namespace ID
-
-# Set secrets
-wrangler secret put WEBHOOK_SECRET
-
-# Deploy
-wrangler deploy
+**Public REST API Endpoints:**
+```
+GET /wp-json/contributor/v1/articles          # List published articles
+GET /wp-json/contributor/v1/articles/{id}     # Single article
+GET /wp-json/contributor/v1/articles/{id}/history  # Article version history
+GET /wp-json/contributor/v1/homepage          # Homepage layout
+GET /wp-json/contributor/v1/collections       # Article collections
+GET /wp-json/contributor/v1/categories        # Categories
 ```
 
-**Configuration (wrangler.toml):**
-```toml
-[vars]
-WORDPRESS_URL = "https://your-site.com"
-
-[[kv_namespaces]]
-binding = "CACHE_KV"
-id = "your-kv-namespace-id"
+**Authenticated Endpoints (requires login):**
+```
+POST /wp-json/contributor/v1/homepage         # Update homepage layout
+GET  /wp-json/contributor/v1/events           # List all events (audit trail)
+POST /wp-json/contributor/v1/collections      # Create collection
+PUT  /wp-json/contributor/v1/collections/{id} # Update collection
+GET  /wp-json/contributor/v1/me               # Current user info
 ```
 
-### 3. React Hooks for Event Sourcing
+### 2. WordPress API Client
+
+Located in: `src/api/wordpress.js`
+
+Simple JavaScript client for WordPress API access.
+
+```javascript
+import * as wordpress from './api/wordpress';
+
+// PUBLIC - No auth required
+const articles = await wordpress.getArticles({ per_page: 10 });
+const article = await wordpress.getArticle(123);
+const history = await wordpress.getArticleHistory(123);
+const homepage = await wordpress.getHomepage();
+
+// AUTHENTICATED - Login required
+await wordpress.login('username', 'application-password');
+await wordpress.updateHomepage({ hero: 123, sections: [...] });
+await wordpress.updatePost(123, { title: 'New Title' });
+```
+
+### 3. Authentication Hook
+
+Located in: `src/hooks/useAuth.js`
+
+React hook for managing authentication state.
+
+```jsx
+import { AuthProvider, useAuth } from './hooks/useAuth';
+
+// Wrap your app
+function App() {
+  return (
+    <AuthProvider>
+      <YourRoutes />
+    </AuthProvider>
+  );
+}
+
+// In components
+function LoginButton() {
+  const { user, isAuthenticated, login, logout, loading, error } = useAuth();
+
+  if (isAuthenticated) {
+    return <button onClick={logout}>Logout ({user.name})</button>;
+  }
+
+  return (
+    <form onSubmit={async (e) => {
+      e.preventDefault();
+      await login(username, appPassword);
+    }}>
+      {/* Login form */}
+    </form>
+  );
+}
+```
+
+### 4. React Hooks for Data Fetching
 
 Located in: `src/hooks/useActivityEvents.js`
-
-Custom React hooks for working with ActivityStreams events.
 
 **Available Hooks:**
 
 ```javascript
-// Basic event fetching
-const { events, loading, error, refetch } = useArticleEvents(articleId);
+// PUBLIC HOOKS (no auth needed)
+import {
+  useArticles,
+  useArticle,
+  useArticleEvents,
+  useHomepage,
+  useCollections,
+  useVersionComparison,
+} from './hooks/useActivityEvents';
 
-// Real-time event stream
-const { events, startStreaming, stopStreaming } = useEventStream();
+// List articles with pagination
+const { articles, loading, hasMore, loadMore } = useArticles({ per_page: 10 });
 
-// State management with event sourcing
-const { article, applyChange, saveChanges } = useEventSourcedArticle(articleId);
+// Single article
+const { article, loading, error } = useArticle(123);
 
-// Version comparison
-const { compareVersions, getDiff } = useVersionComparison(articleId);
+// Article version history (PUBLIC - for transparency!)
+const { events, contributors, latestEvent } = useArticleEvents(123);
 
-// Audit trail
-const { activities, loadMore } = useAuditTrail();
+// Homepage layout
+const { layout, heroArticle, sections } = useHomepage();
+
+// Collections
+const { collections, loading } = useCollections();
+
+// Compare versions
+const { compareVersions, getDiff, versions } = useVersionComparison(123);
+
+// AUTHENTICATED HOOKS (login required)
+import {
+  useHomepageEditor,
+  useArticleEditor,
+  useAuditTrail,
+} from './hooks/useActivityEvents';
+
+// Edit homepage layout
+const { layout, updateLayout, saving } = useHomepageEditor();
+await updateLayout({ hero: 456, sections: [...] });
+
+// Edit article with optimistic updates
+const { article, updateField, save, isDirty } = useArticleEditor(123);
+updateField('title', 'New Title');
+await save();
+
+// Audit trail (all events)
+const { activities, loadMore, activitiesByDate } = useAuditTrail();
 ```
 
-### 4. Version History Component
+### 5. Version History Component
 
 Located in: `src/components/VersionHistory.jsx`
 
-Visual component for displaying and managing article versions.
+Visual component for displaying article version history.
 
-**Features:**
-- Timeline view of all events
-- Filter by event type
-- Preview any version
-- Compare two versions
-- Restore previous versions
-- Shows contributors
-
-**Usage:**
 ```jsx
 import { VersionHistory } from './components/VersionHistory';
 
@@ -166,82 +226,65 @@ function ArticleEditor({ articleId }) {
 }
 ```
 
-### 5. GraphQL Integration
+## Quick Start
 
-Located in: `src/graphql/`
+### 1. Set up WordPress
 
-Apollo Client setup and queries for WPGraphQL.
+```bash
+# Install the plugin
+cp -r wordpress-plugin/contributor-activitystreams /path/to/wordpress/wp-content/plugins/
+wp plugin activate contributor-activitystreams
 
-**Requirements:**
-- WPGraphQL plugin installed in WordPress
-- The ActivityStreams plugin (adds GraphQL types automatically)
-
-**Setup:**
-```javascript
-// In your app entry point
-import { ApolloProvider } from '@apollo/client';
-import { apolloClient } from './graphql/client';
-
-function App() {
-  return (
-    <ApolloProvider client={apolloClient}>
-      <YourApp />
-    </ApolloProvider>
-  );
-}
+# Create an Application Password for editors:
+# WordPress Admin → Users → Your Profile → Application Passwords
+# Name it something like "React Editor" and save the password
 ```
 
-**Available GraphQL Hooks:**
-```javascript
-import {
-  useArticleEventsGraphQL,
-  useArticleWithEvents,
-  useAuditTrailGraphQL,
-  useUpdateArticle,
-  useCreateArticle,
-} from './graphql/hooks';
+### 2. Configure React App
 
-// Fetch article with events
-const { article, events, loading } = useArticleEventsGraphQL(articleId);
+```bash
+# Copy environment template
+cp .env.example .env
 
-// Update article (triggers event)
-const { updateArticle } = useUpdateArticle();
-await updateArticle(articleId, { title: 'New Title' });
+# Edit .env with your WordPress URL
+VITE_WP_API_URL=https://your-site.com/wp-json
 ```
 
-## Migration Strategy
+### 3. Build and Deploy
 
-### Phase 1: Plugin Installation (Week 1)
-1. Install ActivityStreams plugin on WordPress
-2. Events begin logging automatically
-3. Existing site continues working normally
+```bash
+# Install dependencies
+npm install
 
-### Phase 2: Frontend Development (Weeks 2-4)
-1. Build custom React frontend
-2. Connect to WordPress via API
-3. Test on staging subdomain
+# Development
+npm run dev
 
-### Phase 3: Gradual Rollout (Weeks 5-8)
-1. Launch new frontend for new articles
-2. Old articles served by WordPress theme
-3. Monitor and fix issues
+# Build for production
+npm run build
 
-### Phase 4: Full Cutover (Weeks 9-12)
-1. Point domain to new frontend
-2. All content via React frontend
-3. WordPress admin still used for editing
+# Deploy to Netlify (free)
+npm install -g netlify-cli
+netlify deploy --prod --dir=dist
 
-## Cost Breakdown
+# Or deploy to Vercel (free)
+npm install -g vercel
+vercel --prod
+```
 
-| Component | Free Tier | Paid |
-|-----------|-----------|------|
-| Cloudflare Pages | 500 builds/month | $20/month unlimited |
-| Cloudflare Workers | 100k requests/day | $5/month 10M requests |
-| Cloudflare KV | 100k reads/day | $0.50/month |
-| Cloudflare R2 | 10GB storage | $0.015/GB/month |
-| WordPress Hosting | - | $20-50/month (existing) |
+## Authentication
 
-**Total: ~$20-50/month** (same as existing WordPress hosting)
+WordPress Application Passwords (built-in since WordPress 5.6):
+
+1. Go to WordPress Admin → Users → Your Profile
+2. Scroll to "Application Passwords" section
+3. Enter a name (e.g., "React Editor") and click "Add New"
+4. **Save the generated password** - you won't see it again!
+5. Use this password in the React app login
+
+```javascript
+// The password has spaces - they're automatically removed
+await wordpress.login('your-username', 'xxxx xxxx xxxx xxxx xxxx xxxx');
+```
 
 ## Event Schema
 
@@ -249,57 +292,24 @@ Events follow the ActivityStreams 2.0 specification:
 
 ```json
 {
-  "@context": [
-    "https://www.w3.org/ns/activitystreams",
-    "https://thecontributor.org/ns/editorial"
-  ],
+  "@context": "https://www.w3.org/ns/activitystreams",
   "type": "Update",
-  "id": "https://thecontributor.org/activities/Update/123/abc123",
+  "id": "https://your-site.com/activity/abc123",
   "actor": {
     "type": "Person",
-    "id": "https://thecontributor.org/users/5",
-    "name": "Jane Editor",
-    "email": "jane@example.com"
+    "id": "https://your-site.com/author/jane",
+    "name": "Jane Editor"
   },
   "object": {
     "type": "Article",
-    "id": "https://thecontributor.org/2024/01/article-slug",
+    "id": "https://your-site.com/2024/article-slug",
     "name": "Article Title",
     "content": "<p>Article content...</p>",
-    "summary": "Article excerpt",
-    "status": "publish",
-    "wordCount": 1500,
-    "readingTime": 8
+    "status": "publish"
   },
-  "published": "2024-01-15T10:30:00Z",
-  "sequence": 1234,
-  "version": 5
+  "published": "2024-01-15T10:30:00Z"
 }
 ```
-
-## Security Considerations
-
-1. **Authentication**: Use WordPress Application Passwords or JWT tokens
-2. **CORS**: Configure allowed origins in Cloudflare Worker
-3. **Webhooks**: Validate webhook secrets for cache invalidation
-4. **Rate Limiting**: Cloudflare provides DDoS protection
-
-## Troubleshooting
-
-### Events not logging
-- Check plugin is activated
-- Verify post type is in supported list
-- Check database table exists (`wp_activitystreams_events`)
-
-### Cache not invalidating
-- Verify webhook URL in WordPress settings
-- Check webhook secret matches
-- Test endpoint manually with curl
-
-### GraphQL queries failing
-- Ensure WPGraphQL plugin is installed
-- Check authentication headers
-- Verify CORS settings in Worker
 
 ## Files Reference
 
@@ -307,28 +317,44 @@ Events follow the ActivityStreams 2.0 specification:
 news-editor/
 ├── wordpress-plugin/
 │   └── contributor-activitystreams/
-│       └── contributor-activitystreams.php  # WordPress plugin
-├── cloudflare-workers/
-│   └── wordpress-proxy/
-│       ├── src/index.js                     # Worker code
-│       └── wrangler.toml                    # Worker config
+│       └── contributor-activitystreams.php   # WordPress plugin
 ├── src/
+│   ├── api/
+│   │   └── wordpress.js                      # API client
 │   ├── hooks/
-│   │   └── useActivityEvents.js             # React hooks
-│   ├── components/
-│   │   └── VersionHistory.jsx               # UI component
-│   └── graphql/
-│       ├── client.js                        # Apollo client
-│       ├── eventQueries.js                  # GraphQL queries
-│       └── hooks.js                         # GraphQL hooks
-└── HYBRID_ARCHITECTURE.md                   # This file
+│   │   ├── useAuth.js                        # Auth hook
+│   │   └── useActivityEvents.js              # Data hooks
+│   └── components/
+│       └── VersionHistory.jsx                # UI component
+├── .env.example                              # Environment template
+└── HYBRID_ARCHITECTURE.md                    # This file
 ```
+
+## Complete Flow
+
+### For Public Users (No Login):
+1. Visit your site
+2. React app loads from static hosting
+3. Fetches articles from WordPress REST API (public endpoints)
+4. Displays content
+5. Can view version history of any article (transparency!)
+
+### For Editors (Login Required):
+1. Visit /admin
+2. Login with WordPress credentials (Application Password)
+3. React admin interface loads
+4. Make edits → POST to WordPress API with auth token
+5. WordPress plugin logs event to events table
+6. Public site updates instantly
 
 ## Benefits Summary
 
-- **Zero disruption**: Editors keep using WordPress admin
-- **Gradual migration**: Test new frontend with low risk
-- **Event sourcing**: Infinite history, audit trail
-- **Future-proof**: Can migrate fully off WordPress later
-- **Budget-friendly**: Reuse existing hosting
-- **Modern frontend**: Users get fast experience
+| Feature | Benefit |
+|---------|---------|
+| No middleware | Simpler architecture, fewer moving parts |
+| Free hosting | React app on Netlify/Vercel free tier |
+| WordPress admin | Editors can still use familiar WordPress |
+| Custom React admin | Modern, fast editing experience |
+| Event sourcing | Complete history, audit trail |
+| Public history | Transparency - anyone can see edit history |
+| Application Passwords | Built-in WordPress auth, no plugins needed |
