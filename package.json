@@ -20,74 +20,35 @@
     "tailwindcss": "^3.3.2",
     "vite": "^4.3.9"
   },
-  "optionalDependencies": {
-    "comment": "Open-source libraries you can add for enhanced functionality",
-    
-    "comment_rich_text": "Advanced rich text editing (NYT uses ProseMirror)",
-    "prosemirror-view": "^1.31.3",
-    "prosemirror-state": "^1.4.3",
-    "prosemirror-model": "^1.19.0",
-    "prosemirror-schema-basic": "^1.2.2",
-    "prosemirror-schema-list": "^1.3.0",
-    "prosemirror-keymap": "^1.2.2",
-    "prosemirror-history": "^1.3.2",
-    "prosemirror-commands": "^1.5.2",
-    "@tiptap/react": "^2.1.0",
-    "@tiptap/starter-kit": "^2.1.0",
-    "@tiptap/extension-link": "^2.1.0",
-    "@tiptap/extension-image": "^2.1.0",
-    "@tiptap/extension-placeholder": "^2.1.0",
-    
-    "comment_markdown": "Markdown processing",
-    "marked": "^9.0.0",
-    "showdown": "^2.1.0",
-    "remark": "^14.0.3",
-    "remark-parse": "^10.0.2",
-    "remark-html": "^16.0.1",
-    "remark-gfm": "^3.0.1",
-    
-    "comment_sanitization": "HTML sanitization for security",
-    "dompurify": "^3.0.6",
-    "isomorphic-dompurify": "^2.9.0",
-    
-    "comment_document_handling": "PDF and document processing",
-    "pdfjs-dist": "^3.11.174",
-    "tesseract.js": "^4.1.1",
-    "mammoth": "^1.6.0",
-    
-    "comment_collaboration": "Real-time collaborative editing",
-    "yjs": "^13.6.8",
-    "y-prosemirror": "^1.2.1",
-    "y-webrtc": "^10.2.5",
-    "automerge": "^2.1.10",
-    
-    "comment_storage": "Client-side storage and sync",
-    "pouchdb": "^8.0.1",
-    "pouchdb-find": "^8.0.1",
-    "localforage": "^1.10.0",
-    "idb": "^7.1.1",
-    
-    "comment_file_handling": "File upload and management",
-    "react-dropzone": "^14.2.3",
-    "axios": "^1.5.0",
-    
-    "comment_utilities": "Helpful utilities",
-    "lodash": "^4.17.21",
-    "date-fns": "^2.30.0",
-    "uuid": "^9.0.0",
-    "slug": "^8.2.3",
-    
-    "comment_export": "Advanced export options",
-    "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1",
-    "docx": "^8.5.0",
-    
-    "comment_analytics": "Privacy-focused analytics",
-    "@plausible/tracker": "^1.1.0",
-    
-    "comment_api_clients": "CMS integrations",
-    "@tryghost/admin-api": "^1.13.4",
-    "@wordpress/api-fetch": "^6.44.0"
+  "suggestedDependencies": {
+    "rich_text_editing": {
+      "description": "Advanced rich text editing (NYT uses ProseMirror)",
+      "packages": ["prosemirror-view", "@tiptap/react", "@tiptap/starter-kit"]
+    },
+    "markdown": {
+      "description": "Markdown processing",
+      "packages": ["marked", "showdown", "remark"]
+    },
+    "sanitization": {
+      "description": "HTML sanitization for security",
+      "packages": ["dompurify", "isomorphic-dompurify"]
+    },
+    "collaboration": {
+      "description": "Real-time collaborative editing",
+      "packages": ["yjs", "y-prosemirror", "y-webrtc"]
+    },
+    "storage": {
+      "description": "Client-side storage and sync",
+      "packages": ["pouchdb", "localforage", "idb"]
+    },
+    "export": {
+      "description": "Advanced export options",
+      "packages": ["jspdf", "html2canvas", "docx"]
+    },
+    "cms_integrations": {
+      "description": "CMS integrations",
+      "packages": ["@tryghost/admin-api", "@wordpress/api-fetch"]
+    }
   },
   "recommendations": {
     "minimal_setup": [

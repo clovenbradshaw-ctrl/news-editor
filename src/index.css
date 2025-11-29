@@ -123,6 +123,459 @@ body {
   outline: none;
 }
 
+/* ============================================
+   TEXT ELEMENTS STYLES - Professional News Formatting
+   ============================================ */
+
+/* Pull Quote - Large, stylized standalone quote */
+.prose .pull-quote,
+.pull-quote {
+  margin: 2.5em 0;
+  padding: 1.5em 2em;
+  border-left: 4px solid #2563eb;
+  border-right: 4px solid #2563eb;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: relative;
+}
+
+.pull-quote blockquote {
+  font-size: 1.5em;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.4;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-align: center;
+}
+
+.pull-quote cite {
+  display: block;
+  margin-top: 1em;
+  font-size: 0.9rem;
+  font-style: normal;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Drop Cap - Large first letter (NYT/New Yorker style) */
+.prose .drop-cap,
+.drop-cap {
+  margin-top: 0;
+}
+
+.prose .dropcap-letter,
+.dropcap-letter {
+  float: left;
+  font-size: 4.5em;
+  line-height: 0.8;
+  font-weight: 700;
+  margin-right: 0.1em;
+  margin-top: 0.05em;
+  color: #1e293b;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* Kicker - Small text above headline */
+.prose .kicker,
+.kicker {
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #2563eb;
+  margin-bottom: 0.5em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Lead Paragraph - Stylized intro paragraph */
+.prose .lead-paragraph,
+.lead-paragraph {
+  font-size: 1.25em;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #374151;
+  border-left: 3px solid #e5e7eb;
+  padding-left: 1.25em;
+  margin: 1.5em 0;
+}
+
+/* Callout Boxes */
+.prose .callout,
+.callout {
+  margin: 1.5em 0;
+  padding: 1.25em 1.5em;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.callout-info {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.callout-warning {
+  background: #fef3c7;
+  border-color: #f59e0b;
+}
+
+.callout-tip {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+
+.callout-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  margin-bottom: 0.5em;
+  color: #1e293b;
+}
+
+.callout-content {
+  font-size: 0.95em;
+  line-height: 1.6;
+  color: #374151;
+}
+
+/* Key Takeaways Box */
+.prose .key-takeaways,
+.key-takeaways {
+  margin: 2em 0;
+  padding: 1.5em;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 8px;
+  border: 1px solid #f59e0b;
+}
+
+.key-takeaways-title {
+  font-weight: 700;
+  font-size: 1.1em;
+  color: #92400e;
+  margin-bottom: 0.75em;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.key-takeaways-title::before {
+  content: '✦';
+  color: #f59e0b;
+}
+
+.key-takeaways-list {
+  margin: 0;
+  padding-left: 1.25em;
+}
+
+.key-takeaways-list li {
+  margin: 0.5em 0;
+  color: #78350f;
+}
+
+/* Sidebar Box */
+.prose .sidebar-box,
+.sidebar-box {
+  margin: 2em 0;
+  padding: 1.5em;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-title {
+  font-weight: 700;
+  font-size: 1em;
+  color: #1e293b;
+  margin-bottom: 0.75em;
+  padding-bottom: 0.5em;
+  border-bottom: 2px solid #2563eb;
+}
+
+.sidebar-content {
+  font-size: 0.95em;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* Indented Text */
+.prose .indented-text,
+.indented-text {
+  margin-left: 2em;
+  padding-left: 1em;
+  border-left: 2px solid #e5e7eb;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Section Dividers */
+.prose .divider-simple,
+.divider-simple {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2.5em 0;
+}
+
+.prose .divider-dots,
+.divider-dots {
+  text-align: center;
+  font-size: 1.5em;
+  color: #9ca3af;
+  margin: 2.5em 0;
+  letter-spacing: 0.5em;
+}
+
+.prose .divider-line,
+.divider-line {
+  border: none;
+  border-top: 2px solid #1e293b;
+  width: 60px;
+  margin: 2.5em auto;
+}
+
+.prose .divider-flourish,
+.divider-flourish {
+  text-align: center;
+  font-size: 1.5em;
+  color: #64748b;
+  margin: 2.5em 0;
+  font-family: Georgia, serif;
+}
+
+.prose .divider-space,
+.divider-space {
+  height: 2em;
+  margin: 1em 0;
+}
+
+/* Dateline */
+.prose .dateline,
+.dateline {
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #1e293b;
+}
+
+/* Editor's Note / Correction */
+.prose .editors-note,
+.editors-note {
+  margin: 1.5em 0;
+  padding: 1em 1.25em;
+  font-size: 0.9em;
+  border-radius: 6px;
+}
+
+.editors-note-correction {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.editors-note-update {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+}
+
+.editors-note-editors-note {
+  background: #f5f5f4;
+  border: 1px solid #d6d3d1;
+  color: #44403c;
+}
+
+.note-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85em;
+  letter-spacing: 0.03em;
+}
+
+/* Highlight */
+.prose .highlight,
+.highlight {
+  background: linear-gradient(120deg, #fef08a 0%, #fde047 100%);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+/* Small Caps */
+.prose .small-caps,
+.small-caps {
+  font-variant: small-caps;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+/* Read More / Related Link */
+.prose .read-more,
+.read-more {
+  margin: 1.5em 0;
+  padding: 0.75em 1em;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.read-more-label {
+  font-weight: 600;
+  color: #64748b;
+  margin-right: 0.5em;
+}
+
+.read-more a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.read-more a:hover {
+  text-decoration: underline;
+}
+
+/* Chapter/Section Header */
+.prose .chapter-header,
+.chapter-header {
+  margin: 3em 0 2em;
+  text-align: center;
+}
+
+.chapter-number {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #64748b;
+  margin-bottom: 0.5em;
+}
+
+.chapter-title {
+  font-size: 1.75em;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Definition Box */
+.prose .definition-box,
+.definition-box {
+  margin: 1.5em 0;
+  padding: 1em 1.25em;
+  background: #f8fafc;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 6px 6px 0;
+}
+
+.definition-term {
+  font-weight: 700;
+  font-size: 1.05em;
+  color: #1e293b;
+  margin-bottom: 0.25em;
+}
+
+.definition-text {
+  margin: 0;
+  color: #475569;
+  line-height: 1.6;
+}
+
+/* Big Number / Statistic */
+.prose .big-number,
+.big-number {
+  margin: 2em 0;
+  text-align: center;
+  padding: 1.5em;
+}
+
+.big-number-value {
+  display: block;
+  font-size: 3.5em;
+  font-weight: 800;
+  color: #2563eb;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.big-number-label {
+  display: block;
+  margin-top: 0.5em;
+  font-size: 1em;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Verse / Poetry Block */
+.prose .verse-block,
+.verse-block {
+  margin: 2em 0;
+  padding: 1.5em 2em;
+  background: #fafaf9;
+  border-left: 3px solid #a8a29e;
+  font-style: italic;
+}
+
+.verse-line {
+  margin: 0.25em 0;
+  color: #44403c;
+  line-height: 1.8;
+}
+
+/* Q&A Block */
+.prose .qa-block,
+.qa-block {
+  margin: 1.5em 0;
+  padding: 1em 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qa-question {
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 0.75em;
+}
+
+.qa-question strong {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.qa-answer {
+  color: #374151;
+  padding-left: 1.5em;
+}
+
+.qa-answer strong {
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Timeline Event */
+.prose .timeline-event,
+.timeline-event {
+  display: flex;
+  gap: 1em;
+  margin: 1em 0;
+  padding-left: 1em;
+  border-left: 2px solid #2563eb;
+}
+
+.timeline-date {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 0.9em;
+  min-width: 100px;
+}
+
+.timeline-text {
+  color: #374151;
+  line-height: 1.6;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
