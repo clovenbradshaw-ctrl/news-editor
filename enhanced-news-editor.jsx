@@ -7,7 +7,9 @@ import {
   // New icons for text elements
   TextQuote, Indent, LetterText, Info, AlertTriangle, Lightbulb,
   Minus, Square, Highlighter, ChevronDown, Sparkles, StickyNote,
-  ArrowRight, CircleDot, Megaphone, BookOpen
+  ArrowRight, CircleDot, Megaphone, BookOpen,
+  // Admin panel icons
+  Settings, Shield, Database, RefreshCw, X, Lock
 } from 'lucide-react';
 
 const NewsArticleEditor = () => {
@@ -48,6 +50,13 @@ const NewsArticleEditor = () => {
   const [showTextElements, setShowTextElements] = useState(false);
   const textElementsRef = useRef(null);
 
+  // Admin panel state
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+  const ADMIN_PASSWORD = 'password';
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -58,6 +67,41 @@ const NewsArticleEditor = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Admin panel ESC key listener
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        // If admin panel is open, close it
+        if (showAdminPanel) {
+          setShowAdminPanel(false);
+        } else if (showPasswordModal) {
+          // If password modal is open, close it
+          setShowPasswordModal(false);
+          setPasswordInput('');
+          setPasswordError(false);
+        } else {
+          // Otherwise, show password modal
+          setShowPasswordModal(true);
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showAdminPanel, showPasswordModal]);
+
+  // Handle admin login
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setShowPasswordModal(false);
+      setShowAdminPanel(true);
+      setPasswordInput('');
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
   // Auto-save functionality
   useEffect(() => {
@@ -952,6 +996,231 @@ const NewsArticleEditor = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-96 max-w-[90vw]">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Lock size={20} className="text-gray-600" />
+                <h2 className="text-lg font-semibold text-gray-800">Admin Access</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setPasswordInput('');
+                  setPasswordError(false);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAdminLogin}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enter admin password
+                </label>
+                <input
+                  type="password"
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    setPasswordError(false);
+                  }}
+                  className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none ${
+                    passwordError ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="Password"
+                  autoFocus
+                />
+                {passwordError && (
+                  <p className="text-red-500 text-sm mt-1">Incorrect password</p>
+                )}
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordInput('');
+                    setPasswordError(false);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  Login
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Panel */}
+      {showAdminPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]">
+          <div className="bg-white rounded-lg shadow-xl w-[800px] max-w-[95vw] max-h-[90vh] overflow-hidden">
+            <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield size={24} className="text-green-400" />
+                <h2 className="text-xl font-bold">Admin Panel</h2>
+              </div>
+              <button
+                onClick={() => setShowAdminPanel(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-600 font-medium">Word Count</p>
+                  <p className="text-2xl font-bold text-blue-800">
+                    {content.body.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w).length}
+                  </p>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4">
+                  <p className="text-sm text-green-600 font-medium">Sources</p>
+                  <p className="text-2xl font-bold text-green-800">{content.sources.length}</p>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4">
+                  <p className="text-sm text-purple-600 font-medium">History Items</p>
+                  <p className="text-2xl font-bold text-purple-800">{history.length}</p>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4">
+                  <p className="text-sm text-orange-600 font-medium">Headlines</p>
+                  <p className="text-2xl font-bold text-orange-800">{content.headlines.length}</p>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Settings size={18} />
+                  Quick Actions
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Clear all history? This cannot be undone.')) {
+                        setHistory([{ timestamp: new Date(), user: 'Admin', action: 'History cleared', snapshot: null }]);
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Clear History
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Reset article to default? This cannot be undone.')) {
+                        setContent({
+                          title: 'Article Title',
+                          subtitle: '',
+                          byline: 'By Your Name',
+                          date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                          body: '<p>Start writing your investigative article here...</p>',
+                          metadata: { tags: [], categories: [], seo: { metaDescription: '', keywords: [] } },
+                          headlines: [{ text: 'Article Title', tested: false, clickRate: null }],
+                          sources: [],
+                          documents: [],
+                          editorialNotes: [],
+                          status: 'draft'
+                        });
+                        setHistory([{ timestamp: new Date(), user: 'Admin', action: 'Article reset', snapshot: null }]);
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition-colors"
+                  >
+                    <RefreshCw size={16} />
+                    Reset Article
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('wp_auth_token');
+                      localStorage.removeItem('wp_user');
+                      alert('Local storage cleared!');
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                  >
+                    <Database size={16} />
+                    Clear Local Storage
+                  </button>
+                </div>
+              </div>
+
+              {/* Current State */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Database size={18} />
+                  Article State
+                </h3>
+                <div className="bg-gray-900 rounded-lg p-4 overflow-auto max-h-64">
+                  <pre className="text-green-400 text-xs font-mono whitespace-pre-wrap">
+                    {JSON.stringify(content, null, 2)}
+                  </pre>
+                </div>
+              </div>
+
+              {/* System Info */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Info size={18} />
+                  System Info
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Current View Mode:</span>
+                      <span className="ml-2 font-medium">{viewMode}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Article Status:</span>
+                      <span className="ml-2 font-medium">{content.status}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Tags Count:</span>
+                      <span className="ml-2 font-medium">{content.metadata.tags.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Categories Count:</span>
+                      <span className="ml-2 font-medium">{content.metadata.categories.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Documents:</span>
+                      <span className="ml-2 font-medium">{content.documents.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Editorial Notes:</span>
+                      <span className="ml-2 font-medium">{content.editorialNotes.length}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-100 px-6 py-3 flex justify-between items-center">
+              <p className="text-xs text-gray-500">Press ESC to close</p>
+              <button
+                onClick={() => setShowAdminPanel(false)}
+                className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                Close Admin Panel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3">
