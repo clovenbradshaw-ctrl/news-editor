@@ -1,7 +1,7 @@
 {
   "name": "news-article-editor",
   "version": "2.0.0",
-  "description": "Professional news article editor with enterprise publishing features inspired by NYT Scoop, Washington Post Arc XP, and Guardian Fronts",
+  "description": "Professional news article editor inspired by NYT, Washington Post, and Guardian publishing systems",
   "main": "enhanced-news-editor.jsx",
   "scripts": {
     "dev": "vite",
@@ -11,9 +11,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "^0.263.1",
-    "@apollo/client": "^3.8.0",
-    "graphql": "^16.8.0"
+    "lucide-react": "^0.263.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
@@ -21,108 +19,5 @@
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.2",
     "vite": "^4.3.9"
-  },
-  "suggestedDependencies": {
-    "rich_text_editing": {
-      "description": "Advanced rich text editing (NYT uses ProseMirror)",
-      "packages": ["prosemirror-view", "@tiptap/react", "@tiptap/starter-kit"]
-    },
-    "markdown": {
-      "description": "Markdown processing",
-      "packages": ["marked", "showdown", "remark"]
-    },
-    "sanitization": {
-      "description": "HTML sanitization for security",
-      "packages": ["dompurify", "isomorphic-dompurify"]
-    },
-    "collaboration": {
-      "description": "Real-time collaborative editing",
-      "packages": ["yjs", "y-prosemirror", "y-webrtc"]
-    },
-    "storage": {
-      "description": "Client-side storage and sync",
-      "packages": ["pouchdb", "localforage", "idb"]
-    },
-    "export": {
-      "description": "Advanced export options",
-      "packages": ["jspdf", "html2canvas", "docx"]
-    },
-    "cms_integrations": {
-      "description": "CMS integrations",
-      "packages": ["@tryghost/admin-api", "@wordpress/api-fetch"]
-    }
-  },
-  "recommendations": {
-    "minimal_setup": [
-      "marked (markdown processing)",
-      "dompurify (security)",
-      "react-dropzone (file uploads)"
-    ],
-    "professional_setup": [
-      "@tiptap/react (rich text editing)",
-      "@tiptap/starter-kit",
-      "dompurify (security)",
-      "marked (markdown)",
-      "react-dropzone (files)",
-      "date-fns (date formatting)",
-      "slug (URL generation)"
-    ],
-    "enterprise_setup": [
-      "@tiptap/react",
-      "yjs (collaboration)",
-      "y-prosemirror",
-      "pouchdb (offline storage)",
-      "dompurify",
-      "pdfjs-dist (PDF handling)",
-      "axios (API calls)",
-      "@tryghost/admin-api OR @wordpress/api-fetch"
-    ]
-  },
-  "integration_examples": {
-    "ghost": "See ghost-integration.js",
-    "wordpress": "See publishing-enhancements.js (WordPressPublisher)",
-    "documentcloud": "See documentcloud-integration.js",
-    "prosemirror": "See tiptap-editor.jsx",
-    "tiptap": "See tiptap-editor.jsx",
-    "collaboration": "See publishing-enhancements.js (Yjs ready)",
-    "breaking_news": "See publishing-enhancements.js (BreakingNewsAlertManager)",
-    "live_blogging": "See publishing-enhancements.js (LiveBlogManager)",
-    "slack": "See publishing-enhancements.js (SlackNewsroomIntegration)",
-    "analytics": "See publishing-enhancements.js (ArticleAnalytics)",
-    "ab_testing": "See publishing-enhancements.js (HeadlineABTesting)",
-    "multi_platform": "See publishing-enhancements.js (MultiPlatformExporter)",
-    "hybrid_architecture": "See HYBRID_ARCHITECTURE.md",
-    "event_sourcing": "See src/hooks/useActivityEvents.js",
-    "version_history": "See src/components/VersionHistory.jsx",
-    "graphql": "See src/graphql/ directory",
-    "cloudflare_workers": "See cloudflare-workers/ directory",
-    "wp_activitystreams": "See wordpress-plugin/contributor-activitystreams/"
-  },
-  "features_v2": {
-    "enterprise_patterns": [
-      "Breaking news alerts (Guardian Fronts pattern)",
-      "Live blogging (AP/Reuters wire service pattern)",
-      "A/B headline testing (NYT 8-variant pattern)",
-      "Real-time analytics (Guardian Ophan pattern)",
-      "Multi-platform export (Arc XP COPE pattern)",
-      "Slack integration (SF Chronicle/Quartz pattern)",
-      "WordPress publishing (Newspack compatible)",
-      "Keyboard shortcuts (Professional editor pattern)"
-    ],
-    "reading_analytics": [
-      "Flesch Reading Ease score",
-      "Flesch-Kincaid Grade Level",
-      "Word count and reading time",
-      "Engagement predictions",
-      "Shareability scoring"
-    ],
-    "export_formats": [
-      "Apple News Format (ANF)",
-      "AMP HTML",
-      "RSS/Atom feed items",
-      "Plain text (email fallback)",
-      "JSON-LD structured data (SEO)",
-      "Standard HTML/Markdown/JSON"
-    ]
   }
 }
