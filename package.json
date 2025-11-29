@@ -11,7 +11,9 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "lucide-react": "^0.263.1"
+    "lucide-react": "^0.263.1",
+    "@apollo/client": "^3.8.0",
+    "graphql": "^16.8.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.0.0",
@@ -88,7 +90,13 @@
     "slack": "See publishing-enhancements.js (SlackNewsroomIntegration)",
     "analytics": "See publishing-enhancements.js (ArticleAnalytics)",
     "ab_testing": "See publishing-enhancements.js (HeadlineABTesting)",
-    "multi_platform": "See publishing-enhancements.js (MultiPlatformExporter)"
+    "multi_platform": "See publishing-enhancements.js (MultiPlatformExporter)",
+    "hybrid_architecture": "See HYBRID_ARCHITECTURE.md",
+    "event_sourcing": "See src/hooks/useActivityEvents.js",
+    "version_history": "See src/components/VersionHistory.jsx",
+    "graphql": "See src/graphql/ directory",
+    "cloudflare_workers": "See cloudflare-workers/ directory",
+    "wp_activitystreams": "See wordpress-plugin/contributor-activitystreams/"
   },
   "features_v2": {
     "enterprise_patterns": [
