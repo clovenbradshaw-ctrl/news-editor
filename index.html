@@ -783,19 +783,27 @@
         svg.setAttribute('stroke-width', '2');
         svg.setAttribute('stroke-linecap', 'round');
         svg.setAttribute('stroke-linejoin', 'round');
-        const children = icon[2];
-        if (Array.isArray(children)) {
+
+        // Recursively create SVG elements from icon node structure
+        const createElements = (children, parent) => {
+          if (!Array.isArray(children)) return;
           children.forEach(child => {
             if (Array.isArray(child) && child.length >= 2) {
-              const [tagName, attrs] = child;
+              const [tagName, attrs, grandchildren] = child;
               const el = document.createElementNS('http://www.w3.org/2000/svg', tagName);
               Object.entries(attrs || {}).forEach(([key, value]) => {
                 el.setAttribute(key, value);
               });
-              svg.appendChild(el);
+              // Recursively handle nested children
+              if (grandchildren) {
+                createElements(grandchildren, el);
+              }
+              parent.appendChild(el);
             }
           });
-        }
+        };
+
+        createElements(icon[2], svg);
         return svg;
       };
 
@@ -3086,8 +3094,8 @@
                     React.createElement(ToolbarButton, { icon: 'list', label: 'Bullet List', onClick: () => execCommand('insertUnorderedList') }),
                     React.createElement(ToolbarButton, { icon: 'list-ordered', label: 'Numbered List', onClick: () => execCommand('insertOrderedList') }),
                     React.createElement('div', { className: 'w-px bg-gray-300 mx-1' }),
-                    React.createElement(ToolbarButton, { icon: 'quote', label: 'Quote', onClick: () => execCommand('formatBlock', '<blockquote>') }),
-                    React.createElement(ToolbarButton, { icon: 'link', label: 'Insert Link', onClick: insertLink }),
+                    React.createElement(ToolbarButton, { icon: 'text-quote', label: 'Quote', onClick: () => execCommand('formatBlock', '<blockquote>') }),
+                    React.createElement(ToolbarButton, { icon: 'link-2', label: 'Insert Link', onClick: insertLink }),
                     React.createElement('button', {
                       onClick: () => setShowImageModal(true),
                       className: 'flex items-center gap-1 px-3 py-2 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors',
